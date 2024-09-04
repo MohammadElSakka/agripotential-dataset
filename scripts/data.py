@@ -89,6 +89,9 @@ def get_data(load_saved=False):
 
     return sentinel_data
 
+
+
+# save to raw file
 def get_altitude_data(meta):
     # Resample altitude data to match the other bands
     elevation_path = get_elevation_data_path()
