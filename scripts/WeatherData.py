@@ -1,14 +1,14 @@
 import os
 import glob
 import pandas as pd
-from scripts.paths import get_weather_path
+import csv
 
 # Define the path to the directory containing the CSV files
-data_directory = get_weather_path()
-
+data_directory = "data"
 # Use glob to get all CSV files in the directory
 csv_files = glob.glob(os.path.join(data_directory, '*.csv'))
 
+print(csv_files)
 # Check if any files were found
 if not csv_files:
     print(f"No CSV files found in the directory '{data_directory}'. Please check the path.")
@@ -56,4 +56,12 @@ sorted_months = sorted(average_temperatures.keys())
 temperature_array = [average_temperatures[month] for month in sorted_months]
 rainfall_array = [average_rainfall_per_month[month] for month in sorted_months]
 
+print(len(temperature_array))
+print(len(rainfall_array))
 
+with open("data/weather.csv", mode="w") as file:
+    writer = csv.writer(file)
+    writer.writerow(["Year","Month","Temperature", "Rainfall"])
+    for i in range(12):
+        writer.writerow([2019,i+1,temperature_array[i], rainfall_array[i]])
+        
