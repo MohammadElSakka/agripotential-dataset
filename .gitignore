@@ -3,3 +3,8 @@ venv
 
 data/*
 *.zip
+*.csv
+*.tif
+*.tiff
+*.xml
+*.png
