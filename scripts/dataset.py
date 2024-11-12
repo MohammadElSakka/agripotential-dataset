@@ -151,13 +151,13 @@ class Dataset:
         sentinel2_data = np.zeros((self.__meta["height"], self.__meta["width"], 4), np.float32)
         band_list = sorted(list(self.__get_sentinel2_path(year, month).keys()))
         assert band_list == ["B02", "B03", "B04", "B08"], f"Something is wrong with the bands of {month}/{year}"
+        mask = self.get_binary_mask()
         for i in range(len(band_list)):
             band = band_list[i]
-            
             band_path = self.__get_sentinel2_path(year, month)[band]
             sentinel2_data[:,:,i] = rasterio.open(band_path).read(1)
+            
         return sentinel2_data
-
 
 
     def export_dataset(self) -> None:
