@@ -33,6 +33,8 @@ def plot_color_bar(output_file_path: str) -> None:
     colorbar.set_ticklabels(labels)
     colorbar.set_label("Agri Potentials")
     plt.savefig(output_file_path,  bbox_inches='tight')
+    plt.close()
+    return
 
 def visualise_potential(potential_path: str, 
                         output_file: str,
@@ -52,7 +54,7 @@ def save_plot(output_file_path: str, plot_title: str, display_colorbar: bool, da
         plt.colorbar()
     plt.axis("off")
     plt.title(plot_title)
-    plt.savefig(output_file_path, dpi=1600, bbox_inches='tight')
+    plt.savefig(output_file_path, dpi=800, bbox_inches='tight')
     plt.close()
     return 
 
@@ -64,6 +66,7 @@ def save_graph(x: any, y: any, ylabel: str, plot_title: str, output_file_path: s
     plt.title(plot_title)
     plt.savefig(output_file_path, bbox_inches='tight')
     plt.close()
+    return 
 
 def brighten(data: np.ndarray) -> np.ndarray:
     alpha=0.08
@@ -74,13 +77,32 @@ def normalize(data: np.ndarray) -> np.ndarray:
     data_min, data_max = (data.min(), data.max())
     return ((data-data_min)/((data_max - data_min)))
 
+def visualize_sentinel2(idx: int):
+    output_path = "media/"
+    dataset_path = "data/dataset/"
+    sentinel2_paths = [dataset_path+f"sentinel2_2019_{idx}.tif" for i in range(1, 13)]
+    
+    sentinel2_image_path = sentinel2_paths[idx]
+    sentinel2_image = rasterio.open(sentinel2_image_path)
+
+    blue = normalize(brighten(sentinel2_image.read(1)))
+    green = normalize(brighten(sentinel2_image.read(2)))
+    red = normalize(brighten(sentinel2_image.read(3)))
+    nir = normalize(brighten(sentinel2_image.read(4)))
+
+    color_image = np.dstack([red, green, blue])
+    false_color_image = np.dstack([nir, red, green])
+
+    save_plot(output_path+f"sentinel2_2019_{idx+1}.jpg", f"Color image {idx+1}/2019", False, color_image)
+    save_plot(output_path+f"false_sentinel2_2019_{idx+1}.jpg", f"False color image {idx+1}/2019", False, false_color_image)
+
+
 def visualize():
     output_path = "media/"
     dataset_path = "data/dataset/"
 
     binary_mask_path = dataset_path+"binary_mask.png"
     elevation_data_path = dataset_path+"elevation.tif"
-    sentinel2_paths = [dataset_path+f"sentinel2_2019_{i}.tif" for i in range(1, 13)]
     
     global_potential_path = dataset_path+"global_potential.tif"
     gc_potential_path = dataset_path+"gc_potential.tif"
@@ -95,21 +117,6 @@ def visualize():
     elevation = rasterio.open(elevation_data_path).read(1)
     elevation = np.where(binary_mask, elevation, np.nan)
     save_plot(output_path+"elevation.jpg", "Elevation (m)", True, elevation)
-    
-    for i in range(len(sentinel2_paths)):
-        sentinel2_image_path = sentinel2_paths[i]
-        sentinel2_image = rasterio.open(sentinel2_image_path)
-
-        blue = normalize(brighten(sentinel2_image.read(1)))
-        green = normalize(brighten(sentinel2_image.read(2)))
-        red = normalize(brighten(sentinel2_image.read(3)))
-        nir = normalize(brighten(sentinel2_image.read(4)))
-
-        color_image = np.dstack([red, green, blue])
-        false_color_image = np.dstack([nir, red, green])
-
-        save_plot(output_path+f"sentinel2_2019_{i+1}.jpg", f"Color image {i+1}/2019", False, color_image)
-        save_plot(output_path+f"false_sentinel2_2019_{i+1}.jpg", f"False color image {i+1}/2019", False, false_color_image)
     
     visualise_potential(global_potential_path, output_path+f"global_potential.jpg", "Global potential", binary_mask)
     visualise_potential(gc_potential_path, output_path+f"gc_potential.jpg", "Grandes cultures", binary_mask)

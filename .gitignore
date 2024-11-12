@@ -7,4 +7,5 @@ data/*
 *.tif
 *.tiff
 *.xml
+*.jpg
 *.png
