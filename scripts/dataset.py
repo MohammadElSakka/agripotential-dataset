@@ -13,14 +13,18 @@ from rasterio.mask import geometry_mask
 import geopandas as gpd
 import pandas as pd
 
+import skimage.draw
+
+from scripts.utils import gps_to_pixel, compute_boundaries
+
 class Dataset:
     def __init__(self, download=False) -> None:
         self.__data_path = {}
         self.__meta = {} 
         if download:
             self.__download()
-        self.__get_paths()
-        self.__get_meta()
+        self.__save_paths()
+        self.__save_meta()
 
     def __download(self) -> bool:
         response = requests.get("https://cloud.irit.fr/s/pJ8LZfamduAR88a/download")
@@ -32,11 +36,11 @@ class Dataset:
             print(f"Failed to download zip file [status code {response.status_code}].")
             return False
     
-    def __get_meta(self) -> None:
+    def __save_meta(self) -> None:
         self.__meta = rasterio.open(self.__data_path["sentinel2"][2019][1]['B02']).meta     
     
     # private methods to get paths
-    def __get_paths(self) -> None:
+    def __save_paths(self) -> None:
         self.__data_path["sentinel2"] = {}
         years = os.listdir("data/sentinel2_bands")
         for year in years:
@@ -67,8 +71,11 @@ class Dataset:
     def __get_labels_path(self) -> str:
         return self.__data_path["labels"]
     
-    # public methods to export data to files ready to be used
 
+    # public methods to export data to files ready to be used
+    def get_meta(self):
+        return self.__meta
+    
     def get_binary_mask(self, ind_conf: int = 2) -> np.ndarray:
         gdf = gpd.read_file(self.__get_labels_path())
         gdf = gdf.to_crs(self.__meta['crs'])
@@ -126,26 +133,80 @@ class Dataset:
     def get_weather_data(self) -> pd.DataFrame:
         weather_path = self.__get_weather_path()
         df = pd.read_csv(weather_path, sep=";")
-        station_filter = df["NOM_USUEL"] == "MONTPELLIER-AEROPORT"
+        valid_stations = [
+            "LES AIRES",
+            "BEZIERS-COURTADE",
+            "MARSEILLAN-INRAE",
+            "MONTARNAUD",
+            "MONTPELLIER-ENSAM",
+            "MOULES-ET-BAUCELS",
+            "MURVIEL LES BEZIERS",
+            "OCTON",
+            "LES PLANS",
+            "BEZIERS-VIAS",
+            "PRADES LE LEZ",
+            "ROUJAN-INRAE",
+            "ST ANDRE DE SANGONIS",
+            "ST MARTIN DE LONDRES",
+            "SETE",
+            "SOUMONT",
+            "PEZENAS-TOURBES",
+            "LA VACQUERIE_SAPC",
+            "VAILHAN",
+            "VILLENEUVE-LES-MAG-INRAE",
+        ]
+
+        df = df[df["NOM_USUEL"].isin(valid_stations)]
         date_filter = df["AAAAMM"].astype(str).str.startswith("2019")
-        df = df[station_filter & date_filter]
+        df = df[date_filter]
         df['Temperature'] = df[['TX', 'TN']].mean(axis=1).round(1)
         df['Precipitation'] = df["RR"].round(1)
-        df['Evapotranspiration'] = df["ETP"].round(1)
-        df['Insolation'] = df["INST"]
+        # df['Evapotranspiration'] = df["ETP"].round(1)
+        # df['Insolation'] = df["INST"]
 
         df['Date'] = df["AAAAMM"]
         df['Suffix'] = df.groupby('Date').cumcount() + 1
         df['Date'] = df['Date'].astype(str) + '_' + df['Suffix'].astype(str).str.zfill(2)
         df = df.drop(columns=['Suffix'])
 
-        df = df[["Date", "Temperature", "Precipitation", "Evapotranspiration", "Insolation"]]
+        # df = df[["NUM_POSTE","NOM_USUEL","LAT","LON", "Date", "Temperature", "Precipitation", "Evapotranspiration", "Insolation"]]
+        df = df[["NUM_POSTE","NOM_USUEL","LAT","LON", "Date", "Temperature", "Precipitation"]]
         return df 
     
-        # import matplotlib.pyplot as plt
-        # ax = df["RR"].plot(kind="bar")
-        # ax.set_xticklabels(df["AAAAMM"].astype(str).str[-2:], rotation=90)
-        # plt.savefig("rr.png")
+    def map_pixels_to_stations(self, df: pd.DataFrame):
+        def calculate_distance(x1, y1, x2, y2):
+            return np.sqrt((x1 - x2)**2 + (y1 - y2)**2)
+            
+        df_copy = pd.DataFrame(df)[["NUM_POSTE", "LAT", "LON"]].drop_duplicates()
+        up, down, left, right = compute_boundaries(self) # compute_boundaries
+        binary_mask = self.get_binary_mask()[up:down+1, left:right+1]
+        binary_mask = np.array(binary_mask[up:down+1, left:right+1])
+        meta = self.get_meta()
+
+        locations = {}
+        for station_id, lat, lon in zip(df_copy["NUM_POSTE"], df_copy["LAT"], df_copy["LON"]):
+            gps = {
+                "LAT": lat,
+                "LON": lon
+                }
+            x, y = gps_to_pixel(gps, meta)
+            if left<=x<=right and up<=y<=down:
+                x = x - left
+                y = y - up
+                locations[station_id] = [x, y]
+                rr, cc = skimage.draw.disk((y, x), radius=2500)
+                rr = np.clip(rr, 0, binary_mask.shape[0] - 1)
+                cc = np.clip(cc, 0, binary_mask.shape[1] - 1)
+                for r, c in zip(rr, cc):
+                    if binary_mask[r, c]:
+                        if binary_mask[r, c]==1:
+                            binary_mask[r, c] = station_id
+                        else:
+                            d1 = calculate_distance(c,r,x,y)
+                            d2 = calculate_distance(c, r, locations[binary_mask[r, c]][0],locations[binary_mask[r, c]][1])
+                            if d1 < d2:
+                                binary_mask[r, c] = station_id
+        return binary_mask
 
     def get_sentinel2_data(self, year: int, month: int) -> np.ndarray:
         sentinel2_data = np.zeros((self.__meta["height"], self.__meta["width"], 4), np.float32)
@@ -158,7 +219,6 @@ class Dataset:
             sentinel2_data[:,:,i] = rasterio.open(band_path).read(1)
             
         return sentinel2_data
-
 
     def export_dataset(self) -> None:
         def __save_np_as_tiff(file_path: str, arr: np.ndarray) -> None:
@@ -185,39 +245,43 @@ class Dataset:
 
         # features (inputs)
         # elevation : save as tif = 1 tiff
-        elevation_data = np.expand_dims(self.get_elevation_data(), axis=0)
-        __save_np_as_tiff(tmp_dir+"elevation.tif", elevation_data)
+        # elevation_data = np.expand_dims(self.get_elevation_data(), axis=0)
+        # __save_np_as_tiff(tmp_dir+"elevation.tif", elevation_data)
 
         # save as csv = 1 csv
         weather_data = self.get_weather_data()
         weather_data.to_csv(tmp_dir+'weather_data.csv', index=False)
         
-        for year in self.__data_path["sentinel2"]:
-            for month in self.__data_path["sentinel2"][year]:
-                sentinel2_data = np.transpose(self.get_sentinel2_data(year, month), (2, 0, 1))    
-                # save as tiff/month = 12 tiff
-                __save_np_as_tiff(tmp_dir+f"sentinel2_{year}_{month}.tif",sentinel2_data)
+        pixels_to_stations =  np.expand_dims(self.map_pixels_to_stations(weather_data), axis=0)
+        __save_np_as_tiff(tmp_dir+"pixels_to_stations.tif", pixels_to_stations)
+     
+        # for year in self.__data_path["sentinel2"]:
+        #     for month in self.__data_path["sentinel2"][year]:
+        #         sentinel2_data = np.transpose(self.get_sentinel2_data(year, month), (2, 0, 1))    
+        #         # save as tiff/month = 12 tiff
+        #         __save_np_as_tiff(tmp_dir+f"sentinel2_{year}_{month}.tif",sentinel2_data)
+
 
         # labels (outputs)
         # save as tiff per each category = 4 tiffs
-        global_potential = np.transpose(self.get_categorical_potential_data(potential="pot_global"), (2, 0, 1))
-        gc_potential = np.transpose(self.get_categorical_potential_data(potential="potent_gc"), (2, 0, 1))
-        ma_potential = np.transpose(self.get_categorical_potential_data(potential="potent_ma"), (2, 0, 1))
-        vit_potential = np.transpose(self.get_categorical_potential_data(potential="potent_vit"), (2, 0, 1))
-        __save_np_as_tiff(tmp_dir+"global_potential.tif", global_potential)
-        __save_np_as_tiff(tmp_dir+"gc_potential.tif", gc_potential)
-        __save_np_as_tiff(tmp_dir+"ma_potential.tif", ma_potential)
-        __save_np_as_tiff(tmp_dir+"vit_potential.tif", vit_potential)
+        # global_potential = np.transpose(self.get_categorical_potential_data(potential="pot_global"), (2, 0, 1))
+        # gc_potential = np.transpose(self.get_categorical_potential_data(potential="potent_gc"), (2, 0, 1))
+        # ma_potential = np.transpose(self.get_categorical_potential_data(potential="potent_ma"), (2, 0, 1))
+        # vit_potential = np.transpose(self.get_categorical_potential_data(potential="potent_vit"), (2, 0, 1))
+        # __save_np_as_tiff(tmp_dir+"global_potential.tif", global_potential)
+        # __save_np_as_tiff(tmp_dir+"gc_potential.tif", gc_potential)
+        # __save_np_as_tiff(tmp_dir+"ma_potential.tif", ma_potential)
+        # __save_np_as_tiff(tmp_dir+"vit_potential.tif", vit_potential)
 
-        binary_mask = self.get_binary_mask()
-        Image.fromarray(binary_mask).save(tmp_dir+"binary_mask.png")
+        # binary_mask = self.get_binary_mask()
+        # Image.fromarray(binary_mask).save(tmp_dir+"binary_mask.png")
 
-        with zipfile.ZipFile(dataset_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-            for root, _, files in os.walk(tmp_dir):
-                for file in files:
-                    if file.split(".")[-1] != "xml":
-                        file_path = os.path.join(root, file)
-                        arcname = os.path.relpath(file_path, tmp_dir)
-                        zipf.write(file_path, arcname)
+        # with zipfile.ZipFile(dataset_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        #     for root, _, files in os.walk(tmp_dir):
+        #         for file in files:
+        #             if file.split(".")[-1] != "xml":
+        #                 file_path = os.path.join(root, file)
+        #                 arcname = os.path.relpath(file_path, tmp_dir)
+        #                 zipf.write(file_path, arcname)
 
-        shutil.rmtree(tmp_dir)
+        # shutil.rmtree(tmp_dir)

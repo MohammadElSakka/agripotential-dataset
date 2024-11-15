@@ -1,4 +1,12 @@
-def compute_boundaries(dataset):
+import numpy as np
+import rasterio
+import rasterio.transform
+from pyproj import Proj, Transformer
+
+def compute_boundaries(dataset, saved=True) -> tuple[int, int, int, int]:
+    if saved:
+        return 3321, 10979, 0, 9401 
+    
     binary_mask = dataset.get_binary_mask()
     up, down, left, right = -1, -1, 1e8, -1
     last_down = 0
@@ -21,3 +29,13 @@ def compute_boundaries(dataset):
             last_down = binary_mask[i][j]
     # Will return 3321 10979 0 9401
     return up, down, left, right
+
+def pixel_to_gps(data: np.ndarray, i, j: int, meta: dict) -> dict:
+
+    return
+
+def gps_to_pixel(gps: dict, meta: dict) -> tuple[int, int]:
+    transformer = Transformer.from_crs(crs_from='WGS84', crs_to=meta['crs'])
+    x, y = transformer.transform([gps['LAT']], [gps['LON']])
+    x, y = ~meta['transform'] * (x[0], y[0])
+    return int(x), int(y)
