@@ -88,10 +88,10 @@ def normalize(data: np.ndarray) -> np.ndarray:
 def visualize_sentinel2(idx: int):
     output_path = "media/"
     dataset_path = "data/dataset/"
-    sentinel2_paths = [dataset_path+f"sentinel2_2019_{idx}.tif" for i in range(1, 13)]
+    sentinel2_path = dataset_path+f"sentinel2_2019_{idx}.tif"
     up, down, left, right = 3321, 10979, 0, 9401 # compute_boundaries
     
-    sentinel2_image_path = sentinel2_paths[idx]
+    sentinel2_image_path = sentinel2_path
     sentinel2_image = rasterio.open(sentinel2_image_path)
 
     blue = normalize(brighten(sentinel2_image.read(1)))
@@ -105,8 +105,8 @@ def visualize_sentinel2(idx: int):
     color_image = color_image[up:down+1, left:right+1, :]
     false_color_image = false_color_image[up:down+1, left:right+1, :]
 
-    save_plot(output_path+f"sentinel2_2019_{idx+1}.png", f"Color image {idx+1}/2019", False, color_image)
-    save_plot(output_path+f"false_sentinel2_2019_{idx+1}.png", f"False color image {idx+1}/2019", False, false_color_image)
+    save_plot(output_path+f"sentinel2_2019_{idx}.png", f"Color image {idx}/2019", False, color_image)
+    save_plot(output_path+f"false_sentinel2_2019_{idx}.png", f"False color image {idx}/2019", False, false_color_image)
 
 def visualize():
     output_path = "media/"
