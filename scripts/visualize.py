@@ -130,13 +130,13 @@ def visualize():
     visualise_potential(vit_potential_path, output_path+f"vit_potential.jpg", "Viticulture", binary_mask)
     plot_color_bar(output_path+"categorical_colorbar.jpg")
 
-    months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-    weather_df = pd.read_csv(weather_data_path)
-    weather_df['months'] = [months[int(date[4:].split('_')[0])-1]+date[-2:] for date in weather_df['Date']]
-    save_graph(weather_df['months'], weather_df['Temperature'], 'Temperature (°C)', 'Temperature over time (2019)', output_path+"temperature.jpg")
-    save_graph(weather_df['months'], weather_df['Evapotranspiration'], 'Evapotranspiration (mm)', 'Evapotranspiration over time (2019)', output_path+"evapotranspiration.jpg")
-    save_graph(weather_df['months'], weather_df['Precipitation'], 'Precipitation (mm)', 'Precipitation over time (2019)', output_path+"precipitation.jpg")
-    save_graph(weather_df['months'], weather_df['Insolation'], 'Insolation (min)', 'Insolation over time (2019)', output_path+"insolation.jpg")
+    # months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    # weather_df = pd.read_csv(weather_data_path)
+    # weather_df['months'] = [months[int(date[4:].split('_')[0])-1]+date[-2:] for date in weather_df['Date']]
+    # save_graph(weather_df['months'], weather_df['Temperature'], 'Temperature (°C)', 'Temperature over time (2019)', output_path+"temperature.jpg")
+    # save_graph(weather_df['months'], weather_df['Evapotranspiration'], 'Evapotranspiration (mm)', 'Evapotranspiration over time (2019)', output_path+"evapotranspiration.jpg")
+    # save_graph(weather_df['months'], weather_df['Precipitation'], 'Precipitation (mm)', 'Precipitation over time (2019)', output_path+"precipitation.jpg")
+    # save_graph(weather_df['months'], weather_df['Insolation'], 'Insolation (min)', 'Insolation over time (2019)', output_path+"insolation.jpg")
 
 
 def calculate_distance(x1, y1, x2, y2: int) -> float:
@@ -225,7 +225,7 @@ def visualize_weather(data: np.ndarray, dataset: any, df:pd.DataFrame, criteria:
         plt.savefig("media/stations.png", bbox_inches='tight', pad_inches=0, dpi=800)
     else:
         plt.savefig(f"media/{criteria.lower()}.png", bbox_inches='tight', pad_inches=0, dpi=800)
-
+    plt.close()
 
 # for i in tqdm(range(img.shape[0])):
 #     for j in range(img.shape[1]):
