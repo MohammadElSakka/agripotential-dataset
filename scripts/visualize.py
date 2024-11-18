@@ -127,7 +127,7 @@ def visualize():
     visualise_potential(global_potential_path, output_path+f"global_potential.jpg", "Global potential", binary_mask)
     visualise_potential(gc_potential_path, output_path+f"gc_potential.jpg", "Grandes cultures", binary_mask)
     visualise_potential(ma_potential_path, output_path+f"ma_potential.jpg", "Maraîchage", binary_mask)
-    visualise_potential(vit_potential_path, output_path+f"vit_potential.jpg", "Viticulture", binary_mask)
+    # visualise_potential(vit_potential_path, output_path+f"vit_potential.jpg", "Viticulture", binary_mask)
     plot_color_bar(output_path+"categorical_colorbar.jpg")
 
     # months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
