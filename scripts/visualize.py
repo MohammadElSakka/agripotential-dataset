@@ -47,11 +47,12 @@ def visualise_potential(potential_path: str,
                         output_file: str,
                         potential_name: str, 
                         binary_mask: np.ndarray)-> None:
-    
+    up, down, left, right = 3321, 10979, 0, 9401 # compute_boundaries
     potential = rasterio.open(potential_path).read()
     potential = np.transpose(potential, (1, 2, 0))    
     potential = np.argmax(potential, axis=-1)
     potential = np.where(binary_mask, potential, np.nan)
+    potential = potential[up:down+1, left:right+1]
     save_categorical_plot(output_file, potential_name, potential)
     return
 
@@ -88,6 +89,7 @@ def visualize_sentinel2(idx: int):
     output_path = "media/"
     dataset_path = "data/dataset/"
     sentinel2_paths = [dataset_path+f"sentinel2_2019_{idx}.tif" for i in range(1, 13)]
+    up, down, left, right = 3321, 10979, 0, 9401 # compute_boundaries
     
     sentinel2_image_path = sentinel2_paths[idx]
     sentinel2_image = rasterio.open(sentinel2_image_path)
@@ -99,6 +101,9 @@ def visualize_sentinel2(idx: int):
 
     color_image = np.dstack([red, green, blue])
     false_color_image = np.dstack([nir, red, green])
+
+    color_image = color_image[up:down+1, left:right+1, :]
+    false_color_image = false_color_image[up:down+1, left:right+1, :]
 
     save_plot(output_path+f"sentinel2_2019_{idx+1}.jpg", f"Color image {idx+1}/2019", False, color_image)
     save_plot(output_path+f"false_sentinel2_2019_{idx+1}.jpg", f"False color image {idx+1}/2019", False, false_color_image)
@@ -122,12 +127,14 @@ def visualize():
 
     elevation = rasterio.open(elevation_data_path).read(1)
     elevation = np.where(binary_mask, elevation, np.nan)
+    up, down, left, right = 3321, 10979, 0, 9401 # compute_boundaries
+    elevation = elevation[up:down+1, left:right+1]
     save_plot(output_path+"elevation.jpg", "Elevation (m)", True, elevation)
     
-    visualise_potential(global_potential_path, output_path+f"global_potential.jpg", "Global potential", binary_mask)
+    # visualise_potential(global_potential_path, output_path+f"global_potential.jpg", "Global potential", binary_mask)
     visualise_potential(gc_potential_path, output_path+f"gc_potential.jpg", "Grandes cultures", binary_mask)
     visualise_potential(ma_potential_path, output_path+f"ma_potential.jpg", "Maraîchage", binary_mask)
-    # visualise_potential(vit_potential_path, output_path+f"vit_potential.jpg", "Viticulture", binary_mask)
+    visualise_potential(vit_potential_path, output_path+f"vit_potential.jpg", "Viticulture", binary_mask)
     plot_color_bar(output_path+"categorical_colorbar.jpg")
 
     # months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -161,18 +168,19 @@ def visualize_weather(data: np.ndarray, dataset: any, df:pd.DataFrame, criteria:
         norm = Normalize(vmin=0, vmax=len(postes)-1)
         colors = [colormap(norm(i)) for i in range(len(postes))]
     else:
-        norm = Normalize(vmin=df[criteria].min(), vmax=df[criteria].max())
         if "Temperature" in criteria:
+            suffix = "°C"
+            colormap = cm.jet
+            norm = Normalize(vmin=df[criteria].min(), vmax=df[criteria].max())
+            colors = [colormap(norm(i)) for i in range(-4, 37)]
             values = {}
             for station_id in postes:
                 values[station_id] = df[df["ID"] == station_id][criteria].mean()
-            colormap = cm.jet
-            suffix = "°C"
-            colors = [colormap(norm(i)) for i in range(-4, 37)]
         else:
             suffix = "mm"
             colormap = cm.Blues
-            colors = [colormap(norm(i)) for i in range(150, 360)]
+            norm = Normalize(vmin=0, vmax=1200)
+            colors = [colormap(norm(i)) for i in range(0, 1200)]
             values = {}
             for station_id in postes:
                 values[station_id] = df[df["ID"] == station_id][criteria].sum()
@@ -181,7 +189,7 @@ def visualize_weather(data: np.ndarray, dataset: any, df:pd.DataFrame, criteria:
         img[:, :, i] = np.where(data == 0, img[:, :, i] * 0.5, img[:, :, i])
 
     displayed_stations = []
-    for i in range(img.shape[0]):
+    for i in tqdm(range(img.shape[0])):
         for j in range(img.shape[1]):
             station_id = int(data[i, j])
 
@@ -208,9 +216,9 @@ def visualize_weather(data: np.ndarray, dataset: any, df:pd.DataFrame, criteria:
                         y = y - up
 
                     if criteria != None:
-                        text_obj = plt.text(x+75, y+100, f"{poste['NOM_USUEL'].iloc[0]} ({int(value)} {suffix})", fontsize=5, color="white", fontweight='bold')
+                        text_obj = plt.text(x-100, y+100, f"{poste['NOM_USUEL'].iloc[0]} ({int(value)} {suffix})", fontsize=5, color="white", fontweight='bold')
                     else:
-                        text_obj = plt.text(x+75, y+100, f"{poste['NOM_USUEL'].iloc[0]}", fontsize=5, color="white", fontweight='bold')
+                        text_obj = plt.text(x-100, y+100, f"{poste['NOM_USUEL'].iloc[0]}", fontsize=5, color="white", fontweight='bold')
                     text_obj.set_path_effects([
                         patheffects.withStroke(linewidth=1, foreground="black"), 
                         patheffects.Normal()
@@ -227,7 +235,7 @@ def visualize_weather(data: np.ndarray, dataset: any, df:pd.DataFrame, criteria:
     if criteria == None:
         plt.savefig("media/stations.png", bbox_inches='tight', pad_inches=0, dpi=800)
     else:
-        plt.savefig(f"media/{criteria.lower()}.png", bbox_inches='tight', pad_inches=0, dpi=800)
+        plt.savefig(f"media/{criteria.lower().replace(' ','_')}.png", bbox_inches='tight', pad_inches=0, dpi=800)
     plt.close()
 
 # for i in tqdm(range(img.shape[0])):
