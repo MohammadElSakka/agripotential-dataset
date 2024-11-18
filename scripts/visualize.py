@@ -161,33 +161,36 @@ def visualize_weather(data: np.ndarray, dataset: any, df:pd.DataFrame, criteria:
         norm = Normalize(vmin=0, vmax=len(postes)-1)
         colors = [colormap(norm(i)) for i in range(len(postes))]
     else:
-        colormap = cm.jet
         norm = Normalize(vmin=df[criteria].min(), vmax=df[criteria].max())
-        colors = [colormap(norm(i)) for i in range(-1, 30)]
         values = {}
         for station_id in postes:
             values[station_id] = df[df["ID"] == station_id][criteria].mean()
         if "Temperature" in criteria:
+            colormap = cm.jet
             suffix = "°C"
+            colors = [colormap(norm(i)) for i in range(-4, 37)]
         else:
             suffix = "mm"
+            colormap = cm.Blues
+            colors = [colormap(norm(i)) for i in range(150, 360)]
 
     for i in range(3):
         img[:, :, i] = np.where(data == 0, img[:, :, i] * 0.5, img[:, :, i])
 
     displayed_stations = []
-    for i in tqdm(range(img.shape[0])):
+    for i in range(img.shape[0]):
         for j in range(img.shape[1]):
             station_id = int(data[i, j])
 
             if station_id > 1:
-                if criteria != None:
-                    value = values[station_id]
-                    color = colors[int(value)]
-                    img[i, j] = 0.5*img[i,j] + (125*color[0], 125*color[1], 125*color[2])  
-                else:
-                    color = colors[postes.index(station_id)]
-                    img[i, j] = 0.5*img[i,j] + (125*color[0], 125*color[1], 125*color[2])
+                if np.all(img[i,j] != [255, 0, 0]):
+                    if criteria != None:
+                        value = values[station_id]
+                        color = colors[int(value)]
+                        img[i, j] = 0.5*img[i,j] + (125*color[0], 125*color[1], 125*color[2])  
+                    else:
+                        color = colors[postes.index(station_id)]
+                        img[i, j] = 0.5*img[i,j] + (125*color[0], 125*color[1], 125*color[2])
 
                 if station_id not in displayed_stations:
                     poste =  df[df["ID"]==station_id][["ID", "LAT", "LON", "NOM_USUEL"]].drop_duplicates()
@@ -202,9 +205,9 @@ def visualize_weather(data: np.ndarray, dataset: any, df:pd.DataFrame, criteria:
                         y = y - up
 
                     if criteria != None:
-                        text_obj = plt.text(x+50, y+50, f"{poste['NOM_USUEL'].iloc[0]} ({int(value)} {suffix})", fontsize=5, color="white", fontweight='bold')
+                        text_obj = plt.text(x+75, y+100, f"{poste['NOM_USUEL'].iloc[0]} ({int(value)} {suffix})", fontsize=5, color="white", fontweight='bold')
                     else:
-                        text_obj = plt.text(x+50, y+50, f"{poste['NOM_USUEL'].iloc[0]}", fontsize=5, color="white", fontweight='bold')
+                        text_obj = plt.text(x+75, y+100, f"{poste['NOM_USUEL'].iloc[0]}", fontsize=5, color="white", fontweight='bold')
                     text_obj.set_path_effects([
                         patheffects.withStroke(linewidth=1, foreground="black"), 
                         patheffects.Normal()
@@ -219,9 +222,9 @@ def visualize_weather(data: np.ndarray, dataset: any, df:pd.DataFrame, criteria:
     plt.axis('off') 
     plt.tight_layout()
     if criteria == None:
-        plt.savefig("stations.png", bbox_inches='tight', pad_inches=0, dpi=800)
+        plt.savefig("media/stations.png", bbox_inches='tight', pad_inches=0, dpi=800)
     else:
-        plt.savefig(f"{criteria.lower()}.png", bbox_inches='tight', pad_inches=0, dpi=800)
+        plt.savefig(f"media/{criteria.lower()}.png", bbox_inches='tight', pad_inches=0, dpi=800)
 
 
 # for i in tqdm(range(img.shape[0])):

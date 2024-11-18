@@ -168,11 +168,13 @@ class Dataset:
         # df['Evapotranspiration'] = df["ETP"].round(1)
         # df['Insolation'] = df["INST"]
 
-        df['Date'] = df["AAAAMM"]
-        df['Suffix'] = df.groupby('Date').cumcount() + 1
-        df['Date'] = df['Date'].astype(str) + '_' + df['Suffix'].astype(str).str.zfill(2)
-        df = df.drop(columns=['Suffix'])
         df['ID'] = df.groupby('NOM_USUEL').ngroup() + 10
+
+        df['Date'] = df["AAAAMM"]
+        df['Suffix'] = df.groupby(['ID', 'Date']).cumcount() + 1
+        df['Date'] = df['Date'].astype(str) + '_' + df['Suffix'].astype(str)
+        df = df.drop(columns=['Suffix'])
+        
 
         # df = df[["NUM_POSTE","NOM_USUEL","LAT","LON", "Date", "Temperature", "Precipitation", "Evapotranspiration", "Insolation"]]
         df = df[["ID", "NOM_USUEL","LAT","LON", "Date", "Temperature", 'Max Temperature', 'Min Temperature', "Precipitation"]]
@@ -242,9 +244,9 @@ class Dataset:
                 return False 
         
         tmp_dir = "data/.tmp/"
-        if os.path.exists(tmp_dir):
-            shutil.rmtree(tmp_dir)
-        os.mkdir(tmp_dir)
+        # if os.path.exists(tmp_dir):
+        #     shutil.rmtree(tmp_dir)
+        # os.mkdir(tmp_dir)
 
         # features (inputs)
         # elevation : save as tif = 1 tiff
