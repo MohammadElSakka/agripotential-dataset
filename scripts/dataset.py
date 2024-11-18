@@ -144,7 +144,6 @@ class Dataset:
             "MONTPELLIER-ENSAM",
             "MOULES-ET-BAUCELS",
             "MURVIEL LES BEZIERS",
-            "OCTON",
             "LES PLANS",
             "BEZIERS-VIAS",
             "PRADES LE LEZ",
@@ -163,6 +162,8 @@ class Dataset:
         date_filter = df["AAAAMM"].astype(str).str.startswith("2019")
         df = df[date_filter]
         df['Temperature'] = df[['TX', 'TN']].mean(axis=1).round(1)
+        df['Max Temperature'] = df["TX"].round(1)
+        df['Min Temperature'] = df['TN'].round(1)
         df['Precipitation'] = df["RR"].round(1)
         # df['Evapotranspiration'] = df["ETP"].round(1)
         # df['Insolation'] = df["INST"]
@@ -174,7 +175,7 @@ class Dataset:
         df['ID'] = df.groupby('NOM_USUEL').ngroup() + 10
 
         # df = df[["NUM_POSTE","NOM_USUEL","LAT","LON", "Date", "Temperature", "Precipitation", "Evapotranspiration", "Insolation"]]
-        df = df[["ID", "NOM_USUEL","LAT","LON", "Date", "Temperature", "Precipitation"]]
+        df = df[["ID", "NOM_USUEL","LAT","LON", "Date", "Temperature", 'Max Temperature', 'Min Temperature', "Precipitation"]]
         return df 
     
     def map_pixels_to_stations(self, df: pd.DataFrame):
