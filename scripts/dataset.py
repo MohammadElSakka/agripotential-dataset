@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 
 import skimage.draw
 
-from scripts.utils import gps_to_pixel, compute_boundaries
+from scripts.utils import gps_to_pixel 
 
 class Dataset:
     def __init__(self, download=False) -> None:
@@ -123,7 +123,6 @@ class Dataset:
         mask = self.get_binary_mask()
         elevation[elevation <-500] = 0
         elevation[~mask] = 0
-        up, down, left, right = compute_boundaries(self) # compute_boundaries
         elevation = elevation
         return elevation    
     
