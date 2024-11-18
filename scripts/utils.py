@@ -2,6 +2,9 @@ import numpy as np
 import rasterio
 import rasterio.transform
 from pyproj import Proj, Transformer
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning, message=".*Calling float on a single element Series.*")
+warnings.filterwarnings("ignore", category=rasterio.errors.NotGeoreferencedWarning)
 
 def compute_boundaries(dataset, saved=True) -> tuple[int, int, int, int]:
     if saved:
