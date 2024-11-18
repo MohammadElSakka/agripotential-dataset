@@ -105,8 +105,8 @@ def visualize_sentinel2(idx: int):
     color_image = color_image[up:down+1, left:right+1, :]
     false_color_image = false_color_image[up:down+1, left:right+1, :]
 
-    save_plot(output_path+f"sentinel2_2019_{idx+1}.jpg", f"Color image {idx+1}/2019", False, color_image)
-    save_plot(output_path+f"false_sentinel2_2019_{idx+1}.jpg", f"False color image {idx+1}/2019", False, false_color_image)
+    save_plot(output_path+f"sentinel2_2019_{idx+1}.png", f"Color image {idx+1}/2019", False, color_image)
+    save_plot(output_path+f"false_sentinel2_2019_{idx+1}.png", f"False color image {idx+1}/2019", False, false_color_image)
 
 def visualize():
     output_path = "media/"
@@ -129,13 +129,13 @@ def visualize():
     elevation = np.where(binary_mask, elevation, np.nan)
     up, down, left, right = 3321, 10979, 0, 9401 # compute_boundaries
     elevation = elevation[up:down+1, left:right+1]
-    save_plot(output_path+"elevation.jpg", "Elevation (m)", True, elevation)
+    save_plot(output_path+"elevation.png", "Elevation (m)", True, elevation)
     
-    # visualise_potential(global_potential_path, output_path+f"global_potential.jpg", "Global potential", binary_mask)
-    visualise_potential(gc_potential_path, output_path+f"gc_potential.jpg", "Grandes cultures", binary_mask)
-    visualise_potential(ma_potential_path, output_path+f"ma_potential.jpg", "Maraîchage", binary_mask)
-    visualise_potential(vit_potential_path, output_path+f"vit_potential.jpg", "Viticulture", binary_mask)
-    plot_color_bar(output_path+"categorical_colorbar.jpg")
+    # visualise_potential(global_potential_path, output_path+f"global_potential.png", "Global potential", binary_mask)
+    visualise_potential(gc_potential_path, output_path+f"gc_potential.png", "Grandes cultures", binary_mask)
+    visualise_potential(ma_potential_path, output_path+f"ma_potential.png", "Maraîchage", binary_mask)
+    visualise_potential(vit_potential_path, output_path+f"vit_potential.png", "Viticulture", binary_mask)
+    plot_color_bar(output_path+"categorical_colorbar.png")
 
     # months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
     # weather_df = pd.read_csv(weather_data_path)
