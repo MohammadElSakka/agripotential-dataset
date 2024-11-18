@@ -12,6 +12,7 @@ from rasterio.mask import geometry_mask
 
 import geopandas as gpd
 import pandas as pd
+import matplotlib.pyplot as plt
 
 import skimage.draw
 
@@ -122,6 +123,8 @@ class Dataset:
         mask = self.get_binary_mask()
         elevation[elevation <-500] = 0
         elevation[~mask] = 0
+        up, down, left, right = compute_boundaries(self) # compute_boundaries
+        elevation = elevation
         return elevation    
     
     # INST: duree totale d'insolation sur la decade (en mn)
@@ -168,51 +171,50 @@ class Dataset:
         df['Suffix'] = df.groupby('Date').cumcount() + 1
         df['Date'] = df['Date'].astype(str) + '_' + df['Suffix'].astype(str).str.zfill(2)
         df = df.drop(columns=['Suffix'])
+        df['ID'] = df.groupby('NOM_USUEL').ngroup() + 10
 
         # df = df[["NUM_POSTE","NOM_USUEL","LAT","LON", "Date", "Temperature", "Precipitation", "Evapotranspiration", "Insolation"]]
-        df = df[["NUM_POSTE","NOM_USUEL","LAT","LON", "Date", "Temperature", "Precipitation"]]
+        df = df[["ID", "NOM_USUEL","LAT","LON", "Date", "Temperature", "Precipitation"]]
         return df 
     
     def map_pixels_to_stations(self, df: pd.DataFrame):
         def calculate_distance(x1, y1, x2, y2):
             return np.sqrt((x1 - x2)**2 + (y1 - y2)**2)
             
-        df_copy = pd.DataFrame(df)[["NUM_POSTE", "LAT", "LON"]].drop_duplicates()
-        up, down, left, right = compute_boundaries(self) # compute_boundaries
-        binary_mask = self.get_binary_mask()[up:down+1, left:right+1]
-        binary_mask = np.array(binary_mask[up:down+1, left:right+1])
+        df_copy = pd.DataFrame(df)[["ID", "LAT", "LON"]].drop_duplicates()
+        binary_mask = self.get_binary_mask()
+        img = np.zeros(binary_mask.shape)
+        img[binary_mask] = 1
         meta = self.get_meta()
 
         locations = {}
-        for station_id, lat, lon in zip(df_copy["NUM_POSTE"], df_copy["LAT"], df_copy["LON"]):
+        for station_id, lat, lon in zip(df_copy["ID"], df_copy["LAT"], df_copy["LON"]):
             gps = {
                 "LAT": lat,
                 "LON": lon
                 }
             x, y = gps_to_pixel(gps, meta)
-            if left<=x<=right and up<=y<=down:
-                x = x - left
-                y = y - up
-                locations[station_id] = [x, y]
-                rr, cc = skimage.draw.disk((y, x), radius=2500)
-                rr = np.clip(rr, 0, binary_mask.shape[0] - 1)
-                cc = np.clip(cc, 0, binary_mask.shape[1] - 1)
-                for r, c in zip(rr, cc):
-                    if binary_mask[r, c]:
-                        if binary_mask[r, c]==1:
-                            binary_mask[r, c] = station_id
-                        else:
-                            d1 = calculate_distance(c,r,x,y)
-                            d2 = calculate_distance(c, r, locations[binary_mask[r, c]][0],locations[binary_mask[r, c]][1])
-                            if d1 < d2:
-                                binary_mask[r, c] = station_id
-        return binary_mask
+            locations[station_id] = [x, y]
+            rr, cc = skimage.draw.disk((y, x), radius=2500)
+            rr = np.clip(rr, 0, img.shape[0] - 1)
+            cc = np.clip(cc, 0, img.shape[1] - 1)
+            for r, c in zip(rr, cc):
+                if img[r, c]:
+                    if img[r, c]==1:
+                        img[r, c] = station_id
+                    else:
+                        d1 = calculate_distance(c,r,x,y)
+                        d2 = calculate_distance(c, r, locations[img[r, c]][0],locations[img[r, c]][1])
+                        if d1 < d2:
+                            img[r, c] = station_id
+            if 0<img[r, c] < 10:
+                print(img[r,c], r, c, station_id)
+        return img
 
     def get_sentinel2_data(self, year: int, month: int) -> np.ndarray:
         sentinel2_data = np.zeros((self.__meta["height"], self.__meta["width"], 4), np.float32)
         band_list = sorted(list(self.__get_sentinel2_path(year, month).keys()))
         assert band_list == ["B02", "B03", "B04", "B08"], f"Something is wrong with the bands of {month}/{year}"
-        mask = self.get_binary_mask()
         for i in range(len(band_list)):
             band = band_list[i]
             band_path = self.__get_sentinel2_path(year, month)[band]
@@ -253,8 +255,7 @@ class Dataset:
         weather_data.to_csv(tmp_dir+'weather_data.csv', index=False)
         
         pixels_to_stations =  np.expand_dims(self.map_pixels_to_stations(weather_data), axis=0)
-        __save_np_as_tiff(tmp_dir+"pixels_to_stations.tif", pixels_to_stations)
-     
+        np.save(tmp_dir+"pixels_to_stations.npy", pixels_to_stations)
         # for year in self.__data_path["sentinel2"]:
         #     for month in self.__data_path["sentinel2"][year]:
         #         sentinel2_data = np.transpose(self.get_sentinel2_data(year, month), (2, 0, 1))    

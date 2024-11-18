@@ -3,9 +3,16 @@ import numpy as np
 import pandas as pd
 from rasterio import rasterio
 
-import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap, BoundaryNorm
+from tqdm import tqdm
+
 import matplotlib as mpl
+from matplotlib import patheffects, cm
+import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap, BoundaryNorm, Normalize
+import matplotlib.patches as patches
+
+import skimage.draw
+from scripts.utils import compute_boundaries, gps_to_pixel
 
 def save_categorical_plot(output_file_path: str, plot_title: str, data: any) -> None:
     colors = ["red", "orange", "yellow", "lightgreen", "green"]
@@ -96,7 +103,6 @@ def visualize_sentinel2(idx: int):
     save_plot(output_path+f"sentinel2_2019_{idx+1}.jpg", f"Color image {idx+1}/2019", False, color_image)
     save_plot(output_path+f"false_sentinel2_2019_{idx+1}.jpg", f"False color image {idx+1}/2019", False, false_color_image)
 
-
 def visualize():
     output_path = "media/"
     dataset_path = "data/dataset/"
@@ -131,3 +137,89 @@ def visualize():
     save_graph(weather_df['months'], weather_df['Evapotranspiration'], 'Evapotranspiration (mm)', 'Evapotranspiration over time (2019)', output_path+"evapotranspiration.jpg")
     save_graph(weather_df['months'], weather_df['Precipitation'], 'Precipitation (mm)', 'Precipitation over time (2019)', output_path+"precipitation.jpg")
     save_graph(weather_df['months'], weather_df['Insolation'], 'Insolation (min)', 'Insolation over time (2019)', output_path+"insolation.jpg")
+
+
+def calculate_distance(x1, y1, x2, y2: int) -> float:
+    return np.sqrt((x1 - x2)**2 + (y1 - y2)**2)
+
+def visualize_stations(data: np.ndarray, dataset: any, df:pd.DataFrame) -> None:
+    meta = dataset.get_meta()
+    img = np.transpose(rasterio.open("data/dataset/sentinel2_2019_6.tif").read()[:3], (1, 2, 0))
+    img = img[..., ::-1]
+
+    up, down, left, right = 3321, 10979, 0, 9401 # compute_boundaries
+    for i in range(3):
+        img[:,:,i]= normalize(brighten(img[:,:,i]))*255
+    img = img[up:down+1, left:right+1, :]
+    data = np.array(data)
+    data = data[up:down+1, left:right+1]
+
+    postes = pd.unique(df["ID"]).tolist()
+    colormap = cm.tab20
+    norm = Normalize(vmin=0, vmax=len(postes)-1)
+    colors = [colormap(norm(i)) for i in range(len(postes))]
+    for i in range(3):
+        img[:, :, i] = np.where(data == 0, img[:, :, i] * 0.5, img[:, :, i])
+
+    displayed_stations = []
+    for i in range(img.shape[0]):
+        for j in range(img.shape[1]):
+            station_id = int(data[i, j])
+            if station_id > 1:
+                color = colors[postes.index(station_id)]
+                img[i, j] = 0.5*img[i,j] + (125*color[0], 125*color[1], 125*color[2])
+                # img[i, j] = (125*color[0], 125*color[1], 125*color[2])
+
+                if station_id not in displayed_stations:
+                    poste =  df[df["ID"]==station_id][["ID", "LAT", "LON", "NOM_USUEL"]].drop_duplicates()
+                    displayed_stations += [station_id]
+                    gps = {
+                            "LAT": poste["LAT"],
+                            "LON": poste["LON"]
+                        }
+                    x, y = gps_to_pixel(gps, meta)
+                    if left<=x<=right and up<=y<=down:
+                        x = x - left
+                        y = y - up
+
+                    text_obj = plt.text(x+50, y+50, f"{poste['NOM_USUEL'].iloc[0]}", fontsize=5, color="white", fontweight='bold')
+                    text_obj.set_path_effects([
+                        patheffects.withStroke(linewidth=1, foreground="black"), 
+                        patheffects.Normal()
+                    ])
+                    rr, cc = skimage.draw.disk((y, x), radius=50)
+                    rr = np.clip(rr, 0, img.shape[0] - 1)
+                    cc = np.clip(cc, 0, img.shape[1] - 1)
+                    img[rr,cc] = (color[0]*255, color[1]*255, color[2]*255)
+    
+    plt.imshow(img)
+    plt.axis('off') 
+    plt.tight_layout()
+    plt.savefig("stations.png", bbox_inches='tight', pad_inches=0, dpi=800)
+
+
+# for i in tqdm(range(img.shape[0])):
+#     for j in range(img.shape[1]):
+#         if binary_mask[i,j]:
+#             min_distance = np.inf
+#             min_location = None
+#             for location in locations.keys():
+#                 x = locations[location][0]
+#                 y = locations[location][1]
+#                 if abs(j-x) < 2000 and abs(i-y)<2000:
+#                     distance = calculate_distance(j, i, x, y)
+#                     if distance < min_distance:
+#                         min_distance = distance
+#                         min_location = location
+#             color = colormap(norm(coordinates["NOM_USUEL"].tolist().index(min_location)))
+#             img[i,j] = 0.5*img[i,j] + (0.5*color[0]*255, 0.5*color[1]*255, 0.5*color[2]*255)
+
+# meters_per_pixel = 10 
+# real_world_distance_in_meters = 100
+# scale_bar_length_in_pixels = real_world_distance_in_meters / meters_per_pixel
+# x_start = 50
+# y_start = img.shape[0] - 50
+# scale_bar = patches.Rectangle((x_start, y_start), scale_bar_length_in_pixels, 10, linewidth=2, edgecolor='white', facecolor='white', alpha=0.7)
+# plt.gca().add_patch(scale_bar)
+# plt.text(x_start + scale_bar_length_in_pixels + 10, y_start + 5, f'{real_world_distance_in_meters} m', fontsize=12, color='white', verticalalignment='center')
+
