@@ -35,9 +35,9 @@ The potential has 5 levels ranging from very limited to very high.
 ![Elevation](media/elevation.png)
 ## Sentinel-2
 ### Color Image
-![Color image](media/sentinel2_2019_7.png)
+![Color image](media/sentinel2_2019_6.png)
 ### False Color Image
-![False color image](media/false_sentinel2_2019_7.png)
+![False color image](media/false_sentinel2_2019_6.png)
 ### Temperature (Avg) in °C
 ![Temperature avg](media/temperature.png)
 ### Temperature (Max) in °C
