@@ -9,3 +9,5 @@ data/*
 *.xml
 *.jpg
 *.png
+
+!media/*
