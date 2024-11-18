@@ -244,14 +244,14 @@ class Dataset:
                 return False 
         
         tmp_dir = "data/.tmp/"
-        # if os.path.exists(tmp_dir):
-        #     shutil.rmtree(tmp_dir)
-        # os.mkdir(tmp_dir)
+        if os.path.exists(tmp_dir):
+            shutil.rmtree(tmp_dir)
+        os.mkdir(tmp_dir)
 
         # features (inputs)
         # elevation : save as tif = 1 tiff
-        # elevation_data = np.expand_dims(self.get_elevation_data(), axis=0)
-        # __save_np_as_tiff(tmp_dir+"elevation.tif", elevation_data)
+        elevation_data = np.expand_dims(self.get_elevation_data(), axis=0)
+        __save_np_as_tiff(tmp_dir+"elevation.tif", elevation_data)
 
         # save as csv = 1 csv
         weather_data = self.get_weather_data()
@@ -259,33 +259,33 @@ class Dataset:
         
         pixels_to_stations =  np.expand_dims(self.map_pixels_to_stations(weather_data), axis=0)
         np.save(tmp_dir+"pixels_to_stations.npy", pixels_to_stations)
-        # for year in self.__data_path["sentinel2"]:
-        #     for month in self.__data_path["sentinel2"][year]:
-        #         sentinel2_data = np.transpose(self.get_sentinel2_data(year, month), (2, 0, 1))    
-        #         # save as tiff/month = 12 tiff
-        #         __save_np_as_tiff(tmp_dir+f"sentinel2_{year}_{month}.tif",sentinel2_data)
+        for year in self.__data_path["sentinel2"]:
+            for month in self.__data_path["sentinel2"][year]:
+                sentinel2_data = np.transpose(self.get_sentinel2_data(year, month), (2, 0, 1))    
+                # save as tiff/month = 12 tiff
+                __save_np_as_tiff(tmp_dir+f"sentinel2_{year}_{month}.tif",sentinel2_data)
 
 
         # labels (outputs)
         # save as tiff per each category = 4 tiffs
         # global_potential = np.transpose(self.get_categorical_potential_data(potential="pot_global"), (2, 0, 1))
-        # gc_potential = np.transpose(self.get_categorical_potential_data(potential="potent_gc"), (2, 0, 1))
-        # ma_potential = np.transpose(self.get_categorical_potential_data(potential="potent_ma"), (2, 0, 1))
-        # vit_potential = np.transpose(self.get_categorical_potential_data(potential="potent_vit"), (2, 0, 1))
+        gc_potential = np.transpose(self.get_categorical_potential_data(potential="potent_gc"), (2, 0, 1))
+        ma_potential = np.transpose(self.get_categorical_potential_data(potential="potent_ma"), (2, 0, 1))
+        vit_potential = np.transpose(self.get_categorical_potential_data(potential="potent_vit"), (2, 0, 1))
         # __save_np_as_tiff(tmp_dir+"global_potential.tif", global_potential)
-        # __save_np_as_tiff(tmp_dir+"gc_potential.tif", gc_potential)
-        # __save_np_as_tiff(tmp_dir+"ma_potential.tif", ma_potential)
-        # __save_np_as_tiff(tmp_dir+"vit_potential.tif", vit_potential)
+        __save_np_as_tiff(tmp_dir+"gc_potential.tif", gc_potential)
+        __save_np_as_tiff(tmp_dir+"ma_potential.tif", ma_potential)
+        __save_np_as_tiff(tmp_dir+"vit_potential.tif", vit_potential)
 
-        # binary_mask = self.get_binary_mask()
-        # Image.fromarray(binary_mask).save(tmp_dir+"binary_mask.png")
+        binary_mask = self.get_binary_mask()
+        Image.fromarray(binary_mask).save(tmp_dir+"binary_mask.png")
 
-        # with zipfile.ZipFile(dataset_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        #     for root, _, files in os.walk(tmp_dir):
-        #         for file in files:
-        #             if file.split(".")[-1] != "xml":
-        #                 file_path = os.path.join(root, file)
-        #                 arcname = os.path.relpath(file_path, tmp_dir)
-        #                 zipf.write(file_path, arcname)
+        with zipfile.ZipFile(dataset_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for root, _, files in os.walk(tmp_dir):
+                for file in files:
+                    if file.split(".")[-1] != "xml":
+                        file_path = os.path.join(root, file)
+                        arcname = os.path.relpath(file_path, tmp_dir)
+                        zipf.write(file_path, arcname)
 
-        # shutil.rmtree(tmp_dir)
+        shutil.rmtree(tmp_dir)
