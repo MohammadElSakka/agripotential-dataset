@@ -23,21 +23,21 @@ The potential has 5 levels ranging from very limited to very high.
 
 ## Potentials
 ### Potential Levels
-![Potential levels](media/categorical_colorbar.jpg)
+![Potential levels](media/categorical_colorbar.png)
 ### Market Gardening
-![Market gardening](media/ma_potential.jpg)
+![Market gardening](media/ma_potential.png)
 ### Viticulture
-![Viticulture](media/vit_potential.jpg)
+![Viticulture](media/vit_potential.png)
 ### Field Crops
-![Field crops](media/gc_potential.jpg)
+![Field crops](media/gc_potential.png)
 
 ## Elevation
-![Elevation](media/elevation.jpg)
+![Elevation](media/elevation.png)
 ## Sentinel-2
 ### Color Image
-![Color image](media/sentinel2_2019_7.jpg)
+![Color image](media/sentinel2_2019_7.png)
 ### False Color Image
-![False color image](media/false_sentinel2_2019_7.jpg)
+![False color image](media/false_sentinel2_2019_7.png)
 ### Temperature (Avg) in °C
 ![Temperature avg](media/temperature.png)
 ### Temperature (Max) in °C
