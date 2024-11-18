@@ -142,7 +142,8 @@ def visualize():
 def calculate_distance(x1, y1, x2, y2: int) -> float:
     return np.sqrt((x1 - x2)**2 + (y1 - y2)**2)
 
-def visualize_stations(data: np.ndarray, dataset: any, df:pd.DataFrame) -> None:
+def visualize_weather(data: np.ndarray, dataset: any, df:pd.DataFrame, criteria: str = None) -> None:
+    assert criteria in ["Temperature", "Max Temperature", "Min Temperature", "Precipitation", None], "invalid criteria"
     meta = dataset.get_meta()
     img = np.transpose(rasterio.open("data/dataset/sentinel2_2019_6.tif").read()[:3], (1, 2, 0))
     img = img[..., ::-1]
@@ -155,20 +156,38 @@ def visualize_stations(data: np.ndarray, dataset: any, df:pd.DataFrame) -> None:
     data = data[up:down+1, left:right+1]
 
     postes = pd.unique(df["ID"]).tolist()
-    colormap = cm.tab20
-    norm = Normalize(vmin=0, vmax=len(postes)-1)
-    colors = [colormap(norm(i)) for i in range(len(postes))]
+    if criteria == None:
+        colormap = cm.tab20
+        norm = Normalize(vmin=0, vmax=len(postes)-1)
+        colors = [colormap(norm(i)) for i in range(len(postes))]
+    else:
+        colormap = cm.jet
+        norm = Normalize(vmin=df[criteria].min(), vmax=df[criteria].max())
+        colors = [colormap(norm(i)) for i in range(-1, 30)]
+        values = {}
+        for station_id in postes:
+            values[station_id] = df[df["ID"] == station_id][criteria].mean()
+        if "Temperature" in criteria:
+            suffix = "°C"
+        else:
+            suffix = "mm"
+
     for i in range(3):
         img[:, :, i] = np.where(data == 0, img[:, :, i] * 0.5, img[:, :, i])
 
     displayed_stations = []
-    for i in range(img.shape[0]):
+    for i in tqdm(range(img.shape[0])):
         for j in range(img.shape[1]):
             station_id = int(data[i, j])
+
             if station_id > 1:
-                color = colors[postes.index(station_id)]
-                img[i, j] = 0.5*img[i,j] + (125*color[0], 125*color[1], 125*color[2])
-                # img[i, j] = (125*color[0], 125*color[1], 125*color[2])
+                if criteria != None:
+                    value = values[station_id]
+                    color = colors[int(value)]
+                    img[i, j] = 0.5*img[i,j] + (125*color[0], 125*color[1], 125*color[2])  
+                else:
+                    color = colors[postes.index(station_id)]
+                    img[i, j] = 0.5*img[i,j] + (125*color[0], 125*color[1], 125*color[2])
 
                 if station_id not in displayed_stations:
                     poste =  df[df["ID"]==station_id][["ID", "LAT", "LON", "NOM_USUEL"]].drop_duplicates()
@@ -182,7 +201,10 @@ def visualize_stations(data: np.ndarray, dataset: any, df:pd.DataFrame) -> None:
                         x = x - left
                         y = y - up
 
-                    text_obj = plt.text(x+50, y+50, f"{poste['NOM_USUEL'].iloc[0]}", fontsize=5, color="white", fontweight='bold')
+                    if criteria != None:
+                        text_obj = plt.text(x+50, y+50, f"{poste['NOM_USUEL'].iloc[0]} ({int(value)} {suffix})", fontsize=5, color="white", fontweight='bold')
+                    else:
+                        text_obj = plt.text(x+50, y+50, f"{poste['NOM_USUEL'].iloc[0]}", fontsize=5, color="white", fontweight='bold')
                     text_obj.set_path_effects([
                         patheffects.withStroke(linewidth=1, foreground="black"), 
                         patheffects.Normal()
@@ -190,12 +212,16 @@ def visualize_stations(data: np.ndarray, dataset: any, df:pd.DataFrame) -> None:
                     rr, cc = skimage.draw.disk((y, x), radius=50)
                     rr = np.clip(rr, 0, img.shape[0] - 1)
                     cc = np.clip(cc, 0, img.shape[1] - 1)
-                    img[rr,cc] = (color[0]*255, color[1]*255, color[2]*255)
+                    img[rr,cc] = (255, 0, 0)
+
     
     plt.imshow(img)
     plt.axis('off') 
     plt.tight_layout()
-    plt.savefig("stations.png", bbox_inches='tight', pad_inches=0, dpi=800)
+    if criteria == None:
+        plt.savefig("stations.png", bbox_inches='tight', pad_inches=0, dpi=800)
+    else:
+        plt.savefig(f"{criteria.lower()}.png", bbox_inches='tight', pad_inches=0, dpi=800)
 
 
 # for i in tqdm(range(img.shape[0])):
