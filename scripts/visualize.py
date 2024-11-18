@@ -162,10 +162,10 @@ def visualize_weather(data: np.ndarray, dataset: any, df:pd.DataFrame, criteria:
         colors = [colormap(norm(i)) for i in range(len(postes))]
     else:
         norm = Normalize(vmin=df[criteria].min(), vmax=df[criteria].max())
-        values = {}
-        for station_id in postes:
-            values[station_id] = df[df["ID"] == station_id][criteria].mean()
         if "Temperature" in criteria:
+            values = {}
+            for station_id in postes:
+                values[station_id] = df[df["ID"] == station_id][criteria].mean()
             colormap = cm.jet
             suffix = "°C"
             colors = [colormap(norm(i)) for i in range(-4, 37)]
@@ -173,6 +173,9 @@ def visualize_weather(data: np.ndarray, dataset: any, df:pd.DataFrame, criteria:
             suffix = "mm"
             colormap = cm.Blues
             colors = [colormap(norm(i)) for i in range(150, 360)]
+            values = {}
+            for station_id in postes:
+                values[station_id] = df[df["ID"] == station_id][criteria].sum()
 
     for i in range(3):
         img[:, :, i] = np.where(data == 0, img[:, :, i] * 0.5, img[:, :, i])
