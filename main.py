@@ -1,27 +1,36 @@
-from scripts.dataset import Dataset
-from scripts.visualize import visualize, visualize_sentinel2, normalize, brighten, visualize_weather
-from scripts.utils import gps_to_pixel
-
-from PIL import Image
-import numpy as np
-import pandas as pd
 from rasterio import rasterio
-
-import matplotlib.pyplot as plt 
-
 import warnings
+import sys
+import requests
+import zipfile
+import os 
+
+from scripts.dataset import Dataset
 warnings.filterwarnings("ignore", category=FutureWarning, message=".*Calling float on a single element Series.*")
 warnings.filterwarnings("ignore", category=rasterio.errors.NotGeoreferencedWarning)
 
-# dataset = Dataset(download=False)
-# # dataset.export_dataset()
-# # # # 
-# data = np.load("data/dataset/pixels_to_stations.npy")[0]
-# weather = pd.read_csv("data/dataset/weather_data.csv")
-# # visualize_weather(data, dataset, weather, "Precipitation")
-# # visualize_weather(data, dataset, weather, None)
-# # visualize_weather(data, dataset, weather, "Temperature")
-# # visualize_weather(data, dataset, weather, "Max Temperature")
-# # visualize_weather(data, dataset, weather, "Min Temperature")
-# # visualize()
-# visualize_sentinel2(6)
+
+if len(sys.argv) > 1:
+    if sys.argv[1] == "dataset":
+        response = requests.get("https://cloud.irit.fr/s/sWdW8wrbJX0tnXP/download")
+        zip_file_path = "data/dataset.zip"
+        extract_path = "data/dataset/"
+        if response.status_code == 200:
+            with open(zip_file_path, "wb") as f:
+                f.write(response.content)
+            try:    
+                with zipfile.ZipFile(zip_file_path, 'r') as zip:
+                    os.mkdir(extract_path)
+                    zip.extractall(extract_path)
+            except Exception as e:
+                print(f"Failed to extract the zip file: {e}")
+
+            try:
+                os.remove(zip_file_path) 
+            except Exception as e:
+                print(f"Error deleting the zip file: {e}")
+        else:
+            print(f"Failed to download the file. Status code: {response.status_code}")
+
+dataset = Dataset(download=False)
+# dataset.export_dataset()

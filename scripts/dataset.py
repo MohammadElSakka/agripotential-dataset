@@ -28,7 +28,7 @@ class Dataset:
         self.__save_meta()
 
     def __download(self) -> bool:
-        response = requests.get("https://cloud.irit.fr/s/pJ8LZfamduAR88a/download")
+        response = requests.get("https://cloud.irit.fr/s/PZgfCYiV3F33Sjv/download")
         if response.status_code == 200:
             with zipfile.ZipFile(io.BytesIO(response.content)) as zip:
                 zip.extractall("data")
@@ -43,22 +43,22 @@ class Dataset:
     # private methods to get paths
     def __save_paths(self) -> None:
         self.__data_path["sentinel2"] = {}
-        years = os.listdir("data/sentinel2_bands")
+        years = os.listdir("data/raw_data/sentinel2_bands")
         for year in years:
             y = int(year)
             self.__data_path["sentinel2"][y] = {}
-            months = os.listdir(f"data/sentinel2_bands/{year}")
+            months = os.listdir(f"data/raw_data/sentinel2_bands/{year}")
             for month in months:
                 m = int(month.split("_")[0])
                 self.__data_path["sentinel2"][y][m] = {}
-                bands = os.listdir(f"data/sentinel2_bands/{year}/{month}/") 
+                bands = os.listdir(f"data/raw_data/sentinel2_bands/{year}/{month}/") 
                 for band in bands:
-                    band_name = band.split("_")[2]
-                    self.__data_path["sentinel2"][y][m][band_name] = os.path.abspath(f"./data/sentinel2_bands/{year}/{month}/{band}")
+                    band_name = band.split(".")[0]
+                    self.__data_path["sentinel2"][y][m][band_name] = os.path.abspath(f"./data/raw_data/sentinel2_bands/{year}/{month}/{band}")
 
-        self.__data_path["labels"] = os.path.abspath("./data/labels.geojson")
-        self.__data_path["elevation"] = os.path.abspath("./data/elevation/raw_elevation_data_10m.tif")
-        self.__data_path["weather"] = os.path.abspath("./data/weather/weather.csv")
+        self.__data_path["labels"] = os.path.abspath("./data/raw_data/labels.geojson")
+        self.__data_path["elevation"] = os.path.abspath("./data/raw_data/elevation/raw_elevation_data_10m.tif")
+        self.__data_path["weather"] = os.path.abspath("./data/raw_data/weather/weather.csv")
     
     def __get_weather_path(self) -> str:
         return self.__data_path["weather"]
@@ -230,7 +230,7 @@ class Dataset:
             meta["count"] = arr.shape[0]
             with rasterio.open(file_path,"w",**meta) as f:
                 f.write(arr)
-        
+
         dataset_path = "data/dataset.zip"
         if os.path.exists(dataset_path):
             user_input = input("An existing dataset.zip already exists. Override? (y/n) ")

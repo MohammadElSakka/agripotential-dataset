@@ -3,8 +3,6 @@ import numpy as np
 import pandas as pd
 from rasterio import rasterio
 
-from tqdm import tqdm
-
 import matplotlib as mpl
 from matplotlib import patheffects, cm
 import matplotlib.pyplot as plt
@@ -85,9 +83,7 @@ def normalize(data: np.ndarray) -> np.ndarray:
     data_min, data_max = (data.min(), data.max())
     return ((data-data_min)/((data_max - data_min)))
 
-def visualize_sentinel2(idx: int):
-    output_path = "media/"
-    dataset_path = "data/dataset/"
+def visualize_sentinel2(dataset_path: str, output_path:str, idx: int):
     sentinel2_path = dataset_path+f"sentinel2_2019_{idx}.tif"
     up, down, left, right = 3321, 10979, 0, 9401 # compute_boundaries
     
@@ -108,10 +104,7 @@ def visualize_sentinel2(idx: int):
     save_plot(output_path+f"sentinel2_2019_{idx}.png", f"Color image {idx}/2019", False, color_image)
     save_plot(output_path+f"false_sentinel2_2019_{idx}.png", f"False color image {idx}/2019", False, false_color_image)
 
-def visualize():
-    output_path = "media/"
-    dataset_path = "data/dataset/"
-
+def visualize(dataset_path: str, output_path: str):
     binary_mask_path = dataset_path+"binary_mask.png"
     elevation_data_path = dataset_path+"elevation.tif"
     
@@ -189,7 +182,7 @@ def visualize_weather(data: np.ndarray, dataset: any, df:pd.DataFrame, criteria:
         img[:, :, i] = np.where(data == 0, img[:, :, i] * 0.5, img[:, :, i])
 
     displayed_stations = []
-    for i in tqdm(range(img.shape[0])):
+    for i in range(img.shape[0]):
         for j in range(img.shape[1]):
             station_id = int(data[i, j])
 
