@@ -8,6 +8,8 @@ data/*
 *.tiff
 *.xml
 *.jpg
+*.geojson
 *.png
 
+!data/.gitkeep
 !media/*
