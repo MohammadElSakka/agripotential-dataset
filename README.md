@@ -1,6 +1,10 @@
 # Agricultural Potential Dataset
 
-Agricultural potential refers to the capacity of a specific area to produce crops. This potential is influenced by environmental factors such as soil quality and climate. This repository proposes a remote sensing multimodal multisource and multitemporal dataset built for supervised AI.
+Agricultural potential refers to the capacity of a specific area to produce crops. This potential is influenced by environmental factors such as soil quality and climate. This repository proposes a remote sensing multimodal multisource and multitemporal dataset built for supervised AI. This repository contains the code needed to construct the dataset from raw files. However, the ready-to-use dataset is made available using the following command:
+```
+python3 main.py dataset
+```
+A jupyter notebook is provided as a tutorial to understand the dataset structure in ```notebooks/tutorial.ipynb```
 
 # Input features
 Input features include data collected in 2019 that consists of:
