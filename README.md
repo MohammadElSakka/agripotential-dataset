@@ -5,6 +5,7 @@ Agricultural potential refers to the capacity of a specific area to produce crop
 python3 main.py dataset
 ```
 A jupyter notebook is provided as a tutorial to understand the dataset structure in ```notebooks/tutorial.ipynb```
+Click [here](#venv) for the guide to install required libraries
 
 # Input features
 Input features include data collected in 2019 that consists of:
@@ -51,16 +52,15 @@ The potential has 5 levels ranging from very limited to very high.
 ### Precipitation (mm)
 ![Precipitation](media/precipitation.png)
 
-# Creating Python virtual environment for Jupyter Notebook
+# Creating Python virtual environment {#venv}
 
 ## On Linux 
 
 ```
-python3 -m venv myenv
-source myenv/bin/activate
+python3 -m venv agri_venv
+source agri_venv/bin/activate
 pip install jupyter
 pip install ipykernel
-python -m ipykernel install --user --name=myenv --display-name "Python (myenv)"
+python -m ipykernel install --user --name=agri_venv --display-name "Python (agri_venv)"
 pip install -r requirements.txt
-jupyter notebook
 ```
