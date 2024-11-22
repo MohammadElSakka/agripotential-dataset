@@ -98,7 +98,7 @@ class Dataset:
         gdf = gpd.read_file(self.__data_path["labels"])
         gdf = gdf.to_crs(self.__meta["crs"])
         labels = ["Limite", "Assez_limite", "Moyen", "Assez_fort", "Fort_a_tres_fort"]
-        categorical_mask = np.zeros((self.__meta['height'], self.__meta['width'], 6))
+        categorical_mask = np.zeros((self.__meta['height'], self.__meta['width'], 5))
         for i, label in enumerate(labels):
             mask = geometry_mask(gdf[gdf[potential]==label].loc[gdf["ind_conf"] > ind_conf].geometry, 
                                     out_shape=(self.__meta['height'], self.__meta['width']), 
