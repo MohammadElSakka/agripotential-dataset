@@ -52,7 +52,7 @@ The potential has 5 levels ranging from very limited to very high.
 ### Precipitation (mm)
 ![Precipitation](media/precipitation.png) -->
 
-# Creating Python virtual environment {#venv}
+# Creating Python virtual environment
 
 ## On Linux 
 
