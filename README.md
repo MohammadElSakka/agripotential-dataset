@@ -23,7 +23,7 @@ The potentiality of 3 types of plantations:
 
 The potential has 5 levels ranging from very limited to very high.
 
-# Data visualization
+<!-- # Data visualization
 
 
 ## Potentials
@@ -50,7 +50,7 @@ The potential has 5 levels ranging from very limited to very high.
 ### Temperature (Min) in °C
 ![Temperature avg](media/min_temperature.png)
 ### Precipitation (mm)
-![Precipitation](media/precipitation.png)
+![Precipitation](media/precipitation.png) -->
 
 # Creating Python virtual environment {#venv}
 
