@@ -5,7 +5,6 @@ Agricultural potential refers to the capacity of a specific area to produce crop
 python3 main.py dataset
 ```
 A jupyter notebook is provided as a tutorial to understand the dataset structure in ```notebooks/tutorial.ipynb```
-Click [here](#venv) for the guide to install required libraries
 
 # Input features
 Input features include data collected in 2019 that consists of:
