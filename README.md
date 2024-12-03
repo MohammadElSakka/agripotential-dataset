@@ -63,3 +63,10 @@ pip install ipykernel
 python -m ipykernel install --user --name=agri_venv --display-name "Python (agri_venv)"
 pip install -r requirements.txt
 ```
+
+# Related references
+
+## Yield prediction from multitemporal multisource multimodal data
+
+**(1)** Kang, Y., Ozdogan, M., Zhu, X., Ye, Z., Hain, C., & Anderson, M. (2020). Comparative assessment of environmental variables and machine learning algorithms for maize yield prediction in the US Midwest. Environmental Research Letters, 15(6), 064005. [Click to access](https://iopscience.iop.org/article/10.1088/1748-9326/ab7df9/meta)
+
