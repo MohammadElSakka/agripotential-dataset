@@ -35,8 +35,3 @@ if len(sys.argv) > 1:
 
 dataset = Dataset(download=False)
 # dataset.export_dataset()
-visualize_weather(dataset)
-visualize_weather(dataset, criteria="Temperature")
-visualize_weather(dataset, criteria="Max Temperature")
-visualize_weather(dataset, criteria="Min Temperature")
-visualize_weather(dataset, criteria="Precipitation")

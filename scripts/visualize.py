@@ -77,13 +77,15 @@ def save_graph(x: any, y: any, ylabel: str, plot_title: str, output_file_path: s
 def brighten(data: np.ndarray) -> np.ndarray:
     alpha=0.08
     beta=0
-    return np.clip(alpha*data+beta, 0,255)
+    return np.clip(alpha*data+beta, 0, 255)
 
 def normalize(data: np.ndarray) -> np.ndarray:
     data_min, data_max = (data.min(), data.max())
     return ((data-data_min)/((data_max - data_min)))
 
-def visualize_sentinel2(dataset_path: str, output_path:str, idx: int):
+def visualize_sentinel2(idx: int):
+    dataset_path ="./data/dataset/"
+    output_path = "./media/"
     sentinel2_path = dataset_path+f"sentinel2_2019_{idx}.tif"
     up, down, left, right = 3321, 10979, 0, 9401 # compute_boundaries
     
@@ -142,19 +144,21 @@ def visualize(dataset_path: str, output_path: str):
 def calculate_distance(x1, y1, x2, y2: int) -> float:
     return np.sqrt((x1 - x2)**2 + (y1 - y2)**2)
 
-def visualize_weather(data: np.ndarray, dataset: any, df:pd.DataFrame, criteria: str = None) -> None:
+def visualize_weather(dataset: any, criteria: str = None) -> None:
     assert criteria in ["Temperature", "Max Temperature", "Min Temperature", "Precipitation", None], "invalid criteria"
     meta = dataset.get_meta()
-    img = np.transpose(rasterio.open("data/dataset/sentinel2_2019_6.tif").read()[:3], (1, 2, 0))
+    img = np.transpose(rasterio.open("data/dataset/sentinel2_2019_8.tif").read()[:3], (1, 2, 0))
     img = img[..., ::-1]
 
     up, down, left, right = 3321, 10979, 0, 9401 # compute_boundaries
     for i in range(3):
         img[:,:,i]= normalize(brighten(img[:,:,i]))*255
     img = img[up:down+1, left:right+1, :]
-    data = np.array(data)
+
+    data = np.load("data/dataset/pixels_to_stations.npy")[0]
     data = data[up:down+1, left:right+1]
 
+    df = pd.read_csv("data/dataset/weather_data.csv")
     postes = pd.unique(df["ID"]).tolist()
     if criteria == None:
         colormap = cm.tab20
@@ -179,7 +183,7 @@ def visualize_weather(data: np.ndarray, dataset: any, df:pd.DataFrame, criteria:
                 values[station_id] = df[df["ID"] == station_id][criteria].sum()
 
     for i in range(3):
-        img[:, :, i] = np.where(data == 0, img[:, :, i] * 0.5, img[:, :, i])
+        img[:, :, i] = np.where(data == 0, img[:, :, i] * 0.75, img[:, :, i])
 
     displayed_stations = []
     for i in range(img.shape[0]):
@@ -221,7 +225,6 @@ def visualize_weather(data: np.ndarray, dataset: any, df:pd.DataFrame, criteria:
                     cc = np.clip(cc, 0, img.shape[1] - 1)
                     img[rr,cc] = (255, 0, 0)
 
-    
     plt.imshow(img)
     plt.axis('off') 
     plt.tight_layout()
