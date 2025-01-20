@@ -137,11 +137,11 @@ class Dataset:
         df = pd.read_csv(weather_path, sep=";")
         valid_stations = [
             "LES AIRES",
-            "BEZIERS-COURTADE",
+            # "BEZIERS-COURTADE", # missing data
             "MARSEILLAN-INRAE",
             "MONTARNAUD",
             "MONTPELLIER-ENSAM",
-            "MOULES-ET-BAUCELS",
+            # "MOULES-ET-BAUCELS", # missing data
             "MURVIEL LES BEZIERS",
             "LES PLANS",
             "BEZIERS-VIAS",
