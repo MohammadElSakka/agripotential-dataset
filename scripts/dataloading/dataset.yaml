@@ -1,0 +1,18 @@
+mask : 
+  path : "data/dataset/binary_mask.png"
+
+sentinel :
+  normalization : True
+  path : data/dataset
+  prefix : "sentinel2_2019"
+
+weather :
+  path : "data/dataset/weather_data.csv"
+  pixels_to_stations : "data/dataset/pixels_to_stations.npy"
+  selected_columns : {"Temperature" : "", "Precipitation": "mean"}
+
+elevation :
+  path : "data/dataset/elevation.tif"
+
+potentials :
+  path : {"viticulture " : "data/dataset/vit_potential.tif"}
