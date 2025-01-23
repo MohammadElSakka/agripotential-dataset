@@ -20,10 +20,14 @@ def compute_boundaries(binary_mask) -> tuple[int, int, int, int]:
 def apply_boundaries(data, up, down, left, right):
     return data[..., up:down+1, left:right+1]
 
+
 def get_valid_indexes(binary_mask):
     valid_indexes = np.argwhere(binary_mask == 1)
     return valid_indexes
 
+def sort_by_index(l):
+    return sorted(l, key=lambda x: int(x.split('_')[-1].split('.')[0]))
+  
 def normalize_channel(data: np.ndarray) -> np.ndarray:
     data_min, data_max = (data.min(), data.max())
     return ((data-data_min)/((data_max - data_min)))
@@ -31,4 +35,19 @@ def normalize_channel(data: np.ndarray) -> np.ndarray:
 def normalize(data: np.ndarray) -> np.ndarray:
     # Apply normalize_channel to each channel along the last axis
     return np.stack([normalize_channel(data[i]) for i in range(data.shape[0])], axis=-1)
+
+
+def calculate_group_weatherdata(group, column, operation):
+    if operation == "mean":
+        val = group[column].mean()
+    elif operation == "min":
+        val = group[column].min()
+    elif operation == "max":
+        val = group[column].max()
+    elif operation == "sum":
+        val = group[column].sum()
+    else:
+        val = group[column].tolist()
+
+    return val  
 

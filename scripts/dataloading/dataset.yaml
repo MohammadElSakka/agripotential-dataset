@@ -1,18 +1,18 @@
 mask : 
-  path : "data/dataset/binary_mask.png"
+  path : "/projects/pnria/dataset/binary_mask.png"
 
 sentinel :
-  normalization : True
-  path : data/dataset
+  path : "/projects/pnria/dataset"
   prefix : "sentinel2_2019"
+  normalization : True
 
 weather :
-  path : "data/dataset/weather_data.csv"
-  pixels_to_stations : "data/dataset/pixels_to_stations.npy"
-  selected_columns : {"Temperature" : "", "Precipitation": "mean"}
+  path : "/projects/pnria/dataset/weather_data.csv"
+  pixels_to_stations : "/projects/pnria/dataset/pixels_to_stations.npy"
+  selected_columns : {"Temperature" : "mean", "Precipitation" : "sum"}
 
 elevation :
-  path : "data/dataset/elevation.tif"
+  path : "/projects/pnria/dataset/elevation.tif"
 
 potentials :
-  path : {"viticulture " : "data/dataset/vit_potential.tif"}
+  path : {"viticulture" : "/projects/pnria/dataset/vit_potential.tif"}
