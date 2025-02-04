@@ -15,6 +15,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 import skimage.draw
+from skimage.draw import polygon
 
 from scripts.utils import gps_to_pixel 
 
@@ -278,6 +279,20 @@ class Dataset:
 
         binary_mask = self.get_binary_mask()
         Image.fromarray(binary_mask).save(tmp_dir+"binary_mask.png")
+
+        # separate train and test masks
+        poly_coords = [(10980, 3133), (7153, 3133), (5578, 5777), (5073, 6074), (5133, 7024), (5043, 7886), (5281, 8153), (5192, 8599), (5430, 8688), (5608, 9252), (10980, 9252)]
+        poly_rows = [pt[1] for pt in poly_coords]
+        poly_cols = [pt[0] for pt in poly_coords]
+        poly_mask = np.zeros(binary_mask.shape, dtype=bool)
+        rr, cc = polygon(poly_rows, poly_cols, shape=binary_mask.shape)
+        poly_mask[rr, cc] = True
+        
+        selection = (binary_mask == True) & poly_mask
+        Image.fromarray(selection).save(tmp_dir+"test_mask.png")
+       
+        selection = (binary_mask == True) & (poly_mask == False)
+        Image.fromarray(selection).save(tmp_dir+"train_mask.png")
 
         with zipfile.ZipFile(dataset_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
             for root, _, files in os.walk(tmp_dir):

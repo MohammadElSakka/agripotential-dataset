@@ -13,7 +13,7 @@ warnings.filterwarnings("ignore", category=rasterio.errors.NotGeoreferencedWarni
 
 if len(sys.argv) > 1:
     if sys.argv[1] == "dataset":
-        response = requests.get("https://cloud.irit.fr/s/t0fnKon6YRq57UZ/download")
+        response = requests.get("https://cloud.irit.fr/s/N42uhgPxNXJml0P/download")
         zip_file_path = "data/dataset.zip"
         extract_path = "data/dataset/"
         if response.status_code == 200:
@@ -34,4 +34,4 @@ if len(sys.argv) > 1:
             print(f"Failed to download the file. Status code: {response.status_code}")
 
 dataset = Dataset(download=False)
-# dataset.export_dataset()
+dataset.export_dataset()
