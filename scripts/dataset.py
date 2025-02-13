@@ -20,9 +20,13 @@ from skimage.draw import polygon
 from scripts.utils import gps_to_pixel 
 
 class Dataset:
-    def __init__(self, download=False) -> None:
+    def __init__(self, download=False, root=".", ind_conf=2, iddiz=2, icucs=2) -> None:
         self.__data_path = {}
         self.__meta = {} 
+        self.ind_conf = ind_conf
+        self.iddiz = iddiz
+        self.icucs = icucs
+        self.root = root
         if download:
             self.__download()
         self.__save_paths()
@@ -32,7 +36,7 @@ class Dataset:
         response = requests.get("https://cloud.irit.fr/s/PZgfCYiV3F33Sjv/download")
         if response.status_code == 200:
             with zipfile.ZipFile(io.BytesIO(response.content)) as zip:
-                zip.extractall("data")
+                zip.extractall(f"{self.root}/data")
             return True
         else:
             print(f"Failed to download zip file [status code {response.status_code}].")
@@ -44,22 +48,22 @@ class Dataset:
     # private methods to get paths
     def __save_paths(self) -> None:
         self.__data_path["sentinel2"] = {}
-        years = os.listdir("data/raw_data/sentinel2_bands")
+        years = os.listdir(f"{self.root}/data/raw_data/sentinel2_bands")
         for year in years:
             y = int(year)
             self.__data_path["sentinel2"][y] = {}
-            months = os.listdir(f"data/raw_data/sentinel2_bands/{year}")
+            months = os.listdir(f"{self.root}/data/raw_data/sentinel2_bands/{year}")
             for month in months:
                 m = int(month.split("_")[0])
                 self.__data_path["sentinel2"][y][m] = {}
-                bands = os.listdir(f"data/raw_data/sentinel2_bands/{year}/{month}/") 
+                bands = os.listdir(f"{self.root}/data/raw_data/sentinel2_bands/{year}/{month}/") 
                 for band in bands:
                     band_name = band.split(".")[0]
-                    self.__data_path["sentinel2"][y][m][band_name] = os.path.abspath(f"./data/raw_data/sentinel2_bands/{year}/{month}/{band}")
+                    self.__data_path["sentinel2"][y][m][band_name] = os.path.abspath(f"{self.root}/data/raw_data/sentinel2_bands/{year}/{month}/{band}")
 
-        self.__data_path["labels"] = os.path.abspath("./data/raw_data/labels.geojson")
-        self.__data_path["elevation"] = os.path.abspath("./data/raw_data/elevation/raw_elevation_data_10m.tif")
-        self.__data_path["weather"] = os.path.abspath("./data/raw_data/weather/weather.csv")
+        self.__data_path["labels"] = os.path.abspath(f"{self.root}/data/raw_data/labels.geojson")
+        self.__data_path["elevation"] = os.path.abspath(f"{self.root}/data/raw_data/elevation/raw_elevation_data_10m.tif")
+        self.__data_path["weather"] = os.path.abspath(f"{self.root}/data/raw_data/weather/weather.csv")
     
     def __get_weather_path(self) -> str:
         return self.__data_path["weather"]
@@ -78,7 +82,11 @@ class Dataset:
     def get_meta(self):
         return self.__meta
     
-    def get_binary_mask(self, ind_conf: int = 2) -> np.ndarray:
+    def get_binary_mask(self) -> np.ndarray:
+        ind_conf = self.ind_conf
+        icucs = self.icucs
+        iddiz = self.iddiz
+        
         gdf = gpd.read_file(self.__get_labels_path())
         gdf = gdf.to_crs(self.__meta['crs'])
         shape = self.__meta['height'], self.__meta['width']
@@ -87,7 +95,7 @@ class Dataset:
         labels = ["Limite", "Assez_limite", "Moyen", "Assez_fort", "Fort_a_tres_fort"]
         mask = np.zeros((shape), dtype=bool)
         for label in labels:
-            label_mask = geometry_mask(gdf[gdf["pot_global"] == label].loc[gdf["ind_conf"] > ind_conf].geometry, 
+            label_mask = geometry_mask(gdf[gdf["pot_global"] == label].loc[(gdf["ind_conf"] >= ind_conf)| (gdf["icucs"] >= icucs )| (gdf["iddiz"] >= iddiz)].geometry, 
                                 out_shape=shape, 
                                 transform=transform, 
                                 invert=True)
@@ -95,13 +103,16 @@ class Dataset:
         return mask
     
     # potentials = {pot_global, potent_gc, potent_ma, potent_vit}  
-    def get_categorical_potential_data(self, potential: str, ind_conf: int =2) -> np.ndarray: 
+    def get_categorical_potential_data(self, potential: str) -> np.ndarray: 
+        ind_conf = self.ind_conf
+        icucs = self.icucs
+        iddiz = self.iddiz
         gdf = gpd.read_file(self.__data_path["labels"])
         gdf = gdf.to_crs(self.__meta["crs"])
         labels = ["Limite", "Assez_limite", "Moyen", "Assez_fort", "Fort_a_tres_fort"]
         categorical_mask = np.zeros((self.__meta['height'], self.__meta['width'], 5))
         for i, label in enumerate(labels):
-            mask = geometry_mask(gdf[gdf[potential]==label].loc[gdf["ind_conf"] > ind_conf].geometry, 
+            mask = geometry_mask(gdf[gdf[potential]==label].loc[(gdf["ind_conf"] >= ind_conf) | (gdf["icucs"] >= icucs) | (gdf["iddiz"] >= iddiz)].geometry, 
                                     out_shape=(self.__meta['height'], self.__meta['width']), 
                                     transform=self.__meta['transform'], 
                                     invert=True)
@@ -232,7 +243,7 @@ class Dataset:
             with rasterio.open(file_path,"w",**meta) as f:
                 f.write(arr)
 
-        dataset_path = "data/dataset.zip"
+        dataset_path = f"{self.root}/data/dataset.zip"
         if os.path.exists(dataset_path):
             user_input = input("An existing dataset.zip already exists. Override? (y/n) ")
             while user_input != "y" and user_input != "n":
@@ -281,7 +292,8 @@ class Dataset:
         Image.fromarray(binary_mask).save(tmp_dir+"binary_mask.png")
 
         # separate train and test masks
-        poly_coords = [(10980, 3133), (7153, 3133), (5578, 5777), (5073, 6074), (5133, 7024), (5043, 7886), (5281, 8153), (5192, 8599), (5430, 8688), (5608, 9252), (10980, 9252)]
+        # poly_coords = [(10980, 3133), (7153, 3133), (5578, 5777), (5073, 6074), (5133, 7024), (5043, 7886), (5281, 8153), (5192, 8599), (5430, 8688), (5608, 9252), (10980, 9252)]
+        poly_coords = [(0, 854), (3226, 854), (3039, 2077), (2086, 3382), (2127, 4190), (1982, 4874), (3329, 7651), (0, 7651)]
         poly_rows = [pt[1] for pt in poly_coords]
         poly_cols = [pt[0] for pt in poly_coords]
         poly_mask = np.zeros(binary_mask.shape, dtype=bool)
