@@ -13,7 +13,9 @@ warnings.filterwarnings("ignore", category=rasterio.errors.NotGeoreferencedWarni
 
 if len(sys.argv) > 1:
     if sys.argv[1] == "dataset":
-        response = requests.get("https://cloud.irit.fr/s/cz8XCqoJ8oJQD8K/download")
+        with open("download_link.txt", "r") as file:
+            link = file.readline().strip()
+        response = requests.get(link)
         zip_file_path = "data/dataset.zip"
         extract_path = "data/dataset/"
         if response.status_code == 200:
