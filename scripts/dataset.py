@@ -293,7 +293,7 @@ class Dataset:
 
         # separate train and test masks
         # poly_coords = [(10980, 3133), (7153, 3133), (5578, 5777), (5073, 6074), (5133, 7024), (5043, 7886), (5281, 8153), (5192, 8599), (5430, 8688), (5608, 9252), (10980, 9252)]
-        poly_coords = [(0, 854), (3226, 854), (3039, 2077), (2086, 3382), (2127, 4190), (1982, 4874), (3329, 7651), (0, 7651)]
+        poly_coords = [(0, 6723),(2132, 6723),(2162, 7585),(2013, 8446),(3707, 10972),(0, 10972)]
         poly_rows = [pt[1] for pt in poly_coords]
         poly_cols = [pt[0] for pt in poly_coords]
         poly_mask = np.zeros(binary_mask.shape, dtype=bool)
