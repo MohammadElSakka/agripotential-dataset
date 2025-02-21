@@ -37,5 +37,3 @@ if len(sys.argv) > 1:
 
 dataset = Dataset(download=False, ind_conf=3, iddiz=2.5 , icucs=3)
 dataset.export_dataset()
-
-()
