@@ -228,12 +228,14 @@ class Dataset:
     def get_sentinel2_data(self, year: int, month: int) -> np.ndarray:
         sentinel2_data = np.zeros((self.__meta["height"], self.__meta["width"], 4), np.float32)
         band_list = sorted(list(self.__get_sentinel2_path(year, month).keys()))
+        # change band_list
         assert band_list == ["B02", "B03", "B04", "B08"], f"Something is wrong with the bands of {month}/{year}"
         for i in range(len(band_list)):
             band = band_list[i]
             band_path = self.__get_sentinel2_path(year, month)[band]
+            # super resolution when needed
             sentinel2_data[:,:,i] = rasterio.open(band_path).read(1)
-            
+        # Compute VI
         return sentinel2_data
 
     def export_dataset(self) -> None:
