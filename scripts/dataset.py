@@ -127,6 +127,7 @@ class Dataset:
         v = split_idx+(len(blocks)-split_idx)//2
         
         train_blocks = blocks[:split_idx]
+        sample = train_blocks[199]
         val_blocks = blocks[split_idx:v]
         test_blocks = blocks[v:]
         
@@ -172,12 +173,6 @@ class Dataset:
                 patch = self.normalize_sentinel2(patch, 0.25)
                 data[month-1].append(patch)
         return data
-
-    def process(self):
-        binary_mask = self.get_binary_mask()
-        _, train_positions, _, val_positions, _, test_positions = self.split_and_filter()
-        return train_positions, val_positions, test_positions
-
     
     def export_dataset(self) -> None:
         binary_mask = self.get_binary_mask()
@@ -186,13 +181,9 @@ class Dataset:
         val_data = self.generate_sentinel2_grid(val_positions)
         test_data = self.generate_sentinel2_grid(test_positions)
         
-        potent_vit = self.get_categorical_potential_data(potential="potent_vit")
-        potent_ma = self.get_categorical_potential_data(potential="potent_ma")
-        potent_gc = self.get_categorical_potential_data(potential="potent_gc")
-        
-        vit_potential = np.argmax(potent_vit, axis=-1)
-        ma_potential = np.argmax(potent_ma, axis=-1)
-        gc_potential = np.argmax(potent_gc, axis=-1)
+        vit_potential = self.get_categorical_potential_data(potential="potent_vit")
+        ma_potential = self.get_categorical_potential_data(potential="potent_ma")
+        gc_potential = self.get_categorical_potential_data(potential="potent_gc")
         
         with h5py.File("dataset.h5", 'w') as hf:
             
@@ -201,10 +192,7 @@ class Dataset:
             train_sentinel_hf = hf.create_group("train/sentinel2")
             
             train_labels_hf = hf.create_group("train/labels") 
-            train_labels_vit_hf = hf.create_group("train/labels/viticulture") 
-            train_labels_ma_hf = hf.create_group("train/labels/market") 
-            train_labels_gc_hf = hf.create_group("train/labels/field") 
-        
+
             train_sentinel_hf.create_dataset('01_january_2019', data=np.array(train_data[0]))
             train_sentinel_hf.create_dataset('02_february_2019', data=np.array(train_data[1]))
             train_sentinel_hf.create_dataset('03_march_2019', data=np.array(train_data[2]))
@@ -218,18 +206,15 @@ class Dataset:
             train_sentinel_hf.create_dataset('11_november_2019', data=np.array(train_data[10]))
             train_sentinel_hf.create_dataset('12_december_2019', data=np.array(train_data[11]))
         
-            train_labels_vit_hf.create_dataset("viticulture", data=np.array(self.generate_label_grid(train_positions, vit_potential))) 
-            train_labels_ma_hf.create_dataset("market", data=np.array(self.generate_label_grid(train_positions, ma_potential))) 
-            train_labels_gc_hf.create_dataset("field", data=np.array(self.generate_label_grid(train_positions, gc_potential))) 
+            train_labels_hf.create_dataset("viticulture", data=np.array(self.generate_label_grid(train_positions, vit_potential))) 
+            train_labels_hf.create_dataset("market", data=np.array(self.generate_label_grid(train_positions, ma_potential))) 
+            train_labels_hf.create_dataset("field", data=np.array(self.generate_label_grid(train_positions, gc_potential))) 
         
             # TEST
             test_hf = hf.create_group("test") 
             test_sentinel_hf = hf.create_group("test/sentinel2") 
             
             test_labels_hf = hf.create_group("test/labels") 
-            test_labels_vit_hf = hf.create_group("test/labels/viticulture") 
-            test_labels_ma_hf = hf.create_group("test/labels/market") 
-            test_labels_gc_hf = hf.create_group("test/labels/field") 
             
             test_sentinel_hf.create_dataset('01_january_2019', data=np.array(test_data[0]))
             test_sentinel_hf.create_dataset('02_february_2019', data=np.array(test_data[1]))
@@ -244,18 +229,15 @@ class Dataset:
             test_sentinel_hf.create_dataset('11_november_2019', data=np.array(test_data[10]))
             test_sentinel_hf.create_dataset('12_december_2019', data=np.array(test_data[11]))
         
-            test_labels_vit_hf.create_dataset("viticulture", data=np.array(self.generate_label_grid(test_positions, vit_potential))) 
-            test_labels_ma_hf.create_dataset("market", data=np.array(self.generate_label_grid(test_positions, ma_potential))) 
-            test_labels_gc_hf.create_dataset("field", data=np.array(self.generate_label_grid(test_positions, gc_potential))) 
+            test_labels_hf.create_dataset("viticulture", data=np.array(self.generate_label_grid(test_positions, vit_potential))) 
+            test_labels_hf.create_dataset("market", data=np.array(self.generate_label_grid(test_positions, ma_potential))) 
+            test_labels_hf.create_dataset("field", data=np.array(self.generate_label_grid(test_positions, gc_potential))) 
         
             # VALIDATION
             val_hf = hf.create_group("val") 
             val_sentinel_hf = hf.create_group("val/sentinel2") 
             
             val_labels_hf = hf.create_group("val/labels") 
-            val_labels_vit_hf = hf.create_group("val/labels/viticulture") 
-            val_labels_ma_hf = hf.create_group("val/labels/market") 
-            val_labels_gc_hf = hf.create_group("val/labels/field") 
             
             val_sentinel_hf.create_dataset('01_january_2019', data=np.array(val_data[0]))
             val_sentinel_hf.create_dataset('02_february_2019', data=np.array(val_data[1]))
@@ -270,6 +252,6 @@ class Dataset:
             val_sentinel_hf.create_dataset('11_november_2019', data=np.array(val_data[10]))
             val_sentinel_hf.create_dataset('12_december_2019', data=np.array(val_data[11]))
         
-            val_labels_vit_hf.create_dataset("viticulture", data=np.array(self.generate_label_grid(val_positions, vit_potential))) 
-            val_labels_ma_hf.create_dataset("market", data=np.array(self.generate_label_grid(val_positions, ma_potential))) 
-            val_labels_gc_hf.create_dataset("field", data=np.array(self.generate_label_grid(val_positions, gc_potential)))         
+            val_labels_hf.create_dataset("viticulture", data=np.array(self.generate_label_grid(val_positions, vit_potential))) 
+            val_labels_hf.create_dataset("market", data=np.array(self.generate_label_grid(val_positions, ma_potential))) 
+            val_labels_hf.create_dataset("field", data=np.array(self.generate_label_grid(val_positions, gc_potential)))         
