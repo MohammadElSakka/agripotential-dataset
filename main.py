@@ -36,4 +36,4 @@ if len(sys.argv) > 1:
             print(f"Failed to download the file. Status code: {response.status_code}")
 
 dataset = Dataset(download=False, ind_conf=3, iddiz=2.5 , icucs=3)
-# dataset.export_dataset()
+dataset.export_dataset()

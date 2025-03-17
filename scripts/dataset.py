@@ -5,9 +5,11 @@ import os
 import shutil
 import numpy as np
 from PIL import Image
-import rasterio 
+import h5py
 
+import rasterio 
 from rasterio.warp import reproject, Resampling
+from rasterio.windows import Window
 from rasterio.mask import geometry_mask
 
 import geopandas as gpd
@@ -31,6 +33,7 @@ class Dataset:
         self.root = root
 
         self.block_size = block_size
+        
         if download:
             self.__download()
         self.__save_paths()
@@ -57,13 +60,6 @@ class Dataset:
             self.__data_path["sentinel2"][int(path.split("_")[-2])] = path
         self.__data_path["labels"] = os.path.abspath(f"{self.root}/data/raw_data/labels.geojson")
     
-    def __get_labels_path(self) -> str:
-        return self.__data_path["labels"]
-
-    def __get_sentinel2_path(self, year: int, month: int) -> str:
-        return self.__data_path["sentinel2"][year][month]
-
-    # public methods to export data to files ready to be used
     def get_meta(self):
         return self.__meta
     
@@ -72,7 +68,7 @@ class Dataset:
         icucs = self.icucs
         iddiz = self.iddiz
         
-        gdf = gpd.read_file(self.__get_labels_path())
+        gdf = gpd.read_file(self.__data_path["labels"])
         gdf = gdf.to_crs(self.__meta['crs'])
         shape = self.__meta['height'], self.__meta['width']
         transform = self.__meta['transform']
@@ -103,19 +99,6 @@ class Dataset:
                                     invert=True)
             categorical_mask[:,:,i][mask] = 1
         return categorical_mask
-     
-    def get_sentinel2_data(self, year: int, month: int) -> np.ndarray:
-        sentinel2_data = np.zeros((self.__meta["height"], self.__meta["width"], 4), np.float32)
-        band_list = sorted(list(self.__get_sentinel2_path(year, month).keys()))
-        # change band_list
-        assert band_list == ["B02", "B03", "B04", "B08"], f"Something is wrong with the bands of {month}/{year}"
-        for i in range(len(band_list)):
-            band = band_list[i]
-            band_path = self.__get_sentinel2_path(year, month)[band]
-            # super resolution when needed
-            sentinel2_data[:,:,i] = rasterio.open(band_path).read(1)
-        # Compute VI
-        return sentinel2_data
 
     def split_and_filter(self):
         block_size = self.block_size
@@ -141,37 +124,152 @@ class Dataset:
         
         # Séparer en train (80%) et val (20%)
         split_idx = int(len(blocks) * 0.8)
+        v = split_idx+(len(blocks)-split_idx)//2
+        
         train_blocks = blocks[:split_idx]
-        val_blocks = blocks[split_idx:]
+        val_blocks = blocks[split_idx:v]
+        test_blocks = blocks[v:]
+        
         train_positions = positions[:split_idx]
-        val_positions = positions[split_idx:]
+        val_positions = positions[split_idx:v]
+        test_positions = positions[v:]
         
         # Créer les masques binaires pour train et val
         train_mask = np.zeros_like(binary_mask, dtype=np.uint8)
         val_mask = np.zeros_like(binary_mask, dtype=np.uint8)
+        test_mask = np.zeros_like(binary_mask, dtype=np.uint8)
         
         for i, j in train_positions:
             train_mask[i:i+block_size, j:j+block_size] = 1
         
         for i, j in val_positions:
             val_mask[i:i+block_size, j:j+block_size] = 1
-        return train_mask, train_positions, val_mask, val_positions
-    
-    def process(self) -> None:
-        binary_mask = self.get_binary_mask()
-        train_mask, train_positions, val_mask, val_positions = self.split_and_filter()
-        vit_potential = self.get_categorical_potential_data(potential="potent_vit")
-        return train_mask, train_positions, val_mask, val_positions, vit_potential, binary_mask
         
+        for i, j in test_positions:
+            test_mask[i:i+block_size, j:j+block_size] = 1  
+        
+        return train_mask, train_positions, val_mask, val_positions, test_mask, test_positions
+
+    def normalize_sentinel2(self, arr, cut):
+        data = np.clip(arr/10000, 0.00001, cut)
+        data = data/cut
+        return data
+
+    def generate_label_grid(self, positions, label):
+        block_size = self.block_size
+        labels = []
+        for i, j in positions:
+            patch = label[i:i+block_size, j:j+block_size]
+            labels.append(patch)
+        return labels
+        
+    def generate_sentinel2_grid(self, positions):
+        block_size = self.block_size
+        data = [ [] for _ in range(12)]
+        for month in range(1, 13):
+            for i, j in positions:
+                patch = rasterio.open(self.__data_path["sentinel2"][month]).read(window=Window(j, i, block_size, block_size))
+                patch = self.normalize_sentinel2(patch, 0.25)
+                data[month-1].append(patch)
+        return data
+
+    def process(self):
+        binary_mask = self.get_binary_mask()
+        _, train_positions, _, val_positions, _, test_positions = self.split_and_filter()
+        return train_positions, val_positions, test_positions
+
     
     def export_dataset(self) -> None:
-        dataset_path = f"{self.root}/data/dataset.zip"
-        if os.path.exists(dataset_path):
-            user_input = input("An existing dataset.zip already exists. Override? (y/n) ")
-            while user_input != "y" and user_input != "n":
-                user_input = input("An existing dataset.zip  directory already exists. Override? (y/n) ")
-            if user_input == "y":
-                os.remove(dataset_path)
-            else:
-                print(f"Failed to export dataset: dataset.zip cannot be overrided.")
-                return False 
+        binary_mask = self.get_binary_mask()
+        _, train_positions, _, val_positions, _, test_positions = self.split_and_filter()
+        train_data = self.generate_sentinel2_grid(train_positions)
+        val_data = self.generate_sentinel2_grid(val_positions)
+        test_data = self.generate_sentinel2_grid(test_positions)
+        
+        potent_vit = self.get_categorical_potential_data(potential="potent_vit")
+        potent_ma = self.get_categorical_potential_data(potential="potent_ma")
+        potent_gc = self.get_categorical_potential_data(potential="potent_gc")
+        
+        vit_potential = np.argmax(potent_vit, axis=-1)
+        ma_potential = np.argmax(potent_ma, axis=-1)
+        gc_potential = np.argmax(potent_gc, axis=-1)
+        
+        with h5py.File("dataset.h5", 'w') as hf:
+            
+            # TRAIN
+            train_hf = hf.create_group("train") 
+            train_sentinel_hf = hf.create_group("train/sentinel2")
+            
+            train_labels_hf = hf.create_group("train/labels") 
+            train_labels_vit_hf = hf.create_group("train/labels/viticulture") 
+            train_labels_ma_hf = hf.create_group("train/labels/market") 
+            train_labels_gc_hf = hf.create_group("train/labels/field") 
+        
+            train_sentinel_hf.create_dataset('01_january_2019', data=np.array(train_data[0]))
+            train_sentinel_hf.create_dataset('02_february_2019', data=np.array(train_data[1]))
+            train_sentinel_hf.create_dataset('03_march_2019', data=np.array(train_data[2]))
+            train_sentinel_hf.create_dataset('04_april_2019', data=np.array(train_data[3]))
+            train_sentinel_hf.create_dataset('05_may_2019', data=np.array(train_data[4]))
+            train_sentinel_hf.create_dataset('06_june_2019', data=np.array(train_data[5]))
+            train_sentinel_hf.create_dataset('07_july_2019', data=np.array(train_data[6]))
+            train_sentinel_hf.create_dataset('08_august_2019', data=np.array(train_data[7]))
+            train_sentinel_hf.create_dataset('09_september_2019', data=np.array(train_data[8]))
+            train_sentinel_hf.create_dataset('10_october_2019', data=np.array(train_data[9]))
+            train_sentinel_hf.create_dataset('11_november_2019', data=np.array(train_data[10]))
+            train_sentinel_hf.create_dataset('12_december_2019', data=np.array(train_data[11]))
+        
+            train_labels_vit_hf.create_dataset("viticulture", data=np.array(self.generate_label_grid(train_positions, vit_potential))) 
+            train_labels_ma_hf.create_dataset("market", data=np.array(self.generate_label_grid(train_positions, ma_potential))) 
+            train_labels_gc_hf.create_dataset("field", data=np.array(self.generate_label_grid(train_positions, gc_potential))) 
+        
+            # TEST
+            test_hf = hf.create_group("test") 
+            test_sentinel_hf = hf.create_group("test/sentinel2") 
+            
+            test_labels_hf = hf.create_group("test/labels") 
+            test_labels_vit_hf = hf.create_group("test/labels/viticulture") 
+            test_labels_ma_hf = hf.create_group("test/labels/market") 
+            test_labels_gc_hf = hf.create_group("test/labels/field") 
+            
+            test_sentinel_hf.create_dataset('01_january_2019', data=np.array(test_data[0]))
+            test_sentinel_hf.create_dataset('02_february_2019', data=np.array(test_data[1]))
+            test_sentinel_hf.create_dataset('03_march_2019', data=np.array(test_data[2]))
+            test_sentinel_hf.create_dataset('04_april_2019', data=np.array(test_data[3]))
+            test_sentinel_hf.create_dataset('05_may_2019', data=np.array(test_data[4]))
+            test_sentinel_hf.create_dataset('06_june_2019', data=np.array(test_data[5]))
+            test_sentinel_hf.create_dataset('07_july_2019', data=np.array(test_data[6]))
+            test_sentinel_hf.create_dataset('08_august_2019', data=np.array(test_data[7]))
+            test_sentinel_hf.create_dataset('09_september_2019', data=np.array(test_data[8]))
+            test_sentinel_hf.create_dataset('10_october_2019', data=np.array(test_data[9]))
+            test_sentinel_hf.create_dataset('11_november_2019', data=np.array(test_data[10]))
+            test_sentinel_hf.create_dataset('12_december_2019', data=np.array(test_data[11]))
+        
+            test_labels_vit_hf.create_dataset("viticulture", data=np.array(self.generate_label_grid(test_positions, vit_potential))) 
+            test_labels_ma_hf.create_dataset("market", data=np.array(self.generate_label_grid(test_positions, ma_potential))) 
+            test_labels_gc_hf.create_dataset("field", data=np.array(self.generate_label_grid(test_positions, gc_potential))) 
+        
+            # VALIDATION
+            val_hf = hf.create_group("val") 
+            val_sentinel_hf = hf.create_group("val/sentinel2") 
+            
+            val_labels_hf = hf.create_group("val/labels") 
+            val_labels_vit_hf = hf.create_group("val/labels/viticulture") 
+            val_labels_ma_hf = hf.create_group("val/labels/market") 
+            val_labels_gc_hf = hf.create_group("val/labels/field") 
+            
+            val_sentinel_hf.create_dataset('01_january_2019', data=np.array(val_data[0]))
+            val_sentinel_hf.create_dataset('02_february_2019', data=np.array(val_data[1]))
+            val_sentinel_hf.create_dataset('03_march_2019', data=np.array(val_data[2]))
+            val_sentinel_hf.create_dataset('04_april_2019', data=np.array(val_data[3]))
+            val_sentinel_hf.create_dataset('05_may_2019', data=np.array(val_data[4]))
+            val_sentinel_hf.create_dataset('06_june_2019', data=np.array(val_data[5]))
+            val_sentinel_hf.create_dataset('07_july_2019', data=np.array(val_data[6]))
+            val_sentinel_hf.create_dataset('08_august_2019', data=np.array(val_data[7]))
+            val_sentinel_hf.create_dataset('09_september_2019', data=np.array(val_data[8]))
+            val_sentinel_hf.create_dataset('10_october_2019', data=np.array(val_data[9]))
+            val_sentinel_hf.create_dataset('11_november_2019', data=np.array(val_data[10]))
+            val_sentinel_hf.create_dataset('12_december_2019', data=np.array(val_data[11]))
+        
+            val_labels_vit_hf.create_dataset("viticulture", data=np.array(self.generate_label_grid(val_positions, vit_potential))) 
+            val_labels_ma_hf.create_dataset("market", data=np.array(self.generate_label_grid(val_positions, ma_potential))) 
+            val_labels_gc_hf.create_dataset("field", data=np.array(self.generate_label_grid(val_positions, gc_potential)))         
