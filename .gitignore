@@ -1,4 +1,3 @@
-**/*venv/
-data
-**/*.ipynb
-scripts/
+**/*
+*
+!doawnload_link.txt
