@@ -6,7 +6,6 @@ import zipfile
 import os 
 
 from scripts.dataset import Dataset
-from scripts.visualize import visualize_weather, visualize_sentinel2
 warnings.filterwarnings("ignore", category=FutureWarning, message=".*Calling float on a single element Series.*")
 warnings.filterwarnings("ignore", category=rasterio.errors.NotGeoreferencedWarning)
 

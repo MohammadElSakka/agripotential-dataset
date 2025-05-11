@@ -185,7 +185,7 @@ class Dataset:
                     ii = i+k*overlay
                     jj = j+l*overlay
                     if  np.any(binary_mask[ii:ii+patch_size, jj:jj+patch_size]) == 1:
-                        pos += [ii, jj]
+                        pos += [[ii, jj]]
 
         return pos
     
