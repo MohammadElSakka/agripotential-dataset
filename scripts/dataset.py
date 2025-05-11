@@ -22,7 +22,7 @@ from skimage.draw import polygon
 from scripts.utils import gps_to_pixel 
 
 class Dataset:
-    def __init__(self, download=False, root=".", ind_conf=2, iddiz=2, icucs=2, block_size=256) -> None:
+    def __init__(self, download=False, root=".", ind_conf=2, iddiz=2, icucs=2) -> None:
         np.random.seed(42)
         
         self.__data_path = {}
@@ -32,7 +32,8 @@ class Dataset:
         self.icucs = icucs
         self.root = root
 
-        self.block_size = block_size
+        self.block_size = 256
+        self.patch_size = 128
         
         if download:
             self.__download()
@@ -157,26 +158,45 @@ class Dataset:
         return data
 
     def generate_label_grid(self, positions, label):
-        block_size = self.block_size
+        patch_size = self.patch_size
         labels = []
         for i, j in positions:
-            patch = label[i:i+block_size, j:j+block_size]
+            patch = label[i:i+patch_size, j:j+patch_size]
             labels.append(patch)
         return labels
         
     def generate_sentinel2_grid(self, positions):
-        block_size = self.block_size
+        patch_size = self.patch_size
         data = [ [] for _ in range(12)]
         for month in range(1, 13):
             for i, j in positions:
-                patch = rasterio.open(self.__data_path["sentinel2"][month]).read(window=Window(j, i, block_size, block_size))
+                patch = rasterio.open(self.__data_path["sentinel2"][month]).read(window=Window(j, i, patch_size, patch_size))
                 patch = self.normalize_sentinel2(patch, 0.25)
                 data[month-1].append(patch)
         return data
     
+    def blocks_to_patches(self, positions, binary_mask):
+        patch_size = self.patch_size
+        overlay = patch_size//2
+        pos = []
+        for i, j in positions:
+            for k in range(3):
+                for l in range(3):
+                    ii = i+k*overlay
+                    jj = j+l*overlay
+                    if  np.any(binary_mask[ii:ii+patch_size, jj:jj+patch_size]) == 1:
+                        pos += [ii, jj]
+
+        return pos
+    
     def export_dataset(self) -> None:
         binary_mask = self.get_binary_mask()
         _, train_positions, _, val_positions, _, test_positions = self.split_and_filter()
+
+        train_positions = self.blocks_to_patches(train_positions, binary_mask)
+        val_positions = self.blocks_to_patches(val_positions, binary_mask)
+        test_positions = self.blocks_to_patches(test_positions, binary_mask)
+
         train_data = self.generate_sentinel2_grid(train_positions)
         val_data = self.generate_sentinel2_grid(val_positions)
         test_data = self.generate_sentinel2_grid(test_positions)
