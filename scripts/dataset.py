@@ -5,6 +5,7 @@ import os
 import shutil
 import numpy as np
 from PIL import Image
+import gc
 import h5py
 
 import rasterio 
@@ -196,18 +197,15 @@ class Dataset:
         train_positions = self.blocks_to_patches(train_positions, binary_mask)
         val_positions = self.blocks_to_patches(val_positions, binary_mask)
         test_positions = self.blocks_to_patches(test_positions, binary_mask)
-
-        train_data = self.generate_sentinel2_grid(train_positions)
-        val_data = self.generate_sentinel2_grid(val_positions)
-        test_data = self.generate_sentinel2_grid(test_positions)
-        
+ 
         vit_potential = self.get_categorical_potential_data(potential="potent_vit")
         ma_potential = self.get_categorical_potential_data(potential="potent_ma")
         gc_potential = self.get_categorical_potential_data(potential="potent_gc")
         
-        with h5py.File("dataset.h5", 'w') as hf:
+        with h5py.File("dataset.h5", 'a') as hf:
             
             # TRAIN
+            train_data = self.generate_sentinel2_grid(train_positions)
             train_hf = hf.create_group("train") 
             train_sentinel_hf = hf.create_group("train/sentinel2")
             
@@ -229,8 +227,13 @@ class Dataset:
             train_labels_hf.create_dataset("viticulture", data=np.array(self.generate_label_grid(train_positions, vit_potential))) 
             train_labels_hf.create_dataset("market", data=np.array(self.generate_label_grid(train_positions, ma_potential))) 
             train_labels_hf.create_dataset("field", data=np.array(self.generate_label_grid(train_positions, gc_potential))) 
-        
+
+            del train_data 
+            gc.collect()
+
             # TEST
+            test_data = self.generate_sentinel2_grid(test_positions)
+       
             test_hf = hf.create_group("test") 
             test_sentinel_hf = hf.create_group("test/sentinel2") 
             
@@ -253,7 +256,12 @@ class Dataset:
             test_labels_hf.create_dataset("market", data=np.array(self.generate_label_grid(test_positions, ma_potential))) 
             test_labels_hf.create_dataset("field", data=np.array(self.generate_label_grid(test_positions, gc_potential))) 
         
+            del test_data
+            gc.collect()
+
             # VALIDATION
+            val_data = self.generate_sentinel2_grid(val_positions)
+
             val_hf = hf.create_group("val") 
             val_sentinel_hf = hf.create_group("val/sentinel2") 
             
@@ -275,3 +283,6 @@ class Dataset:
             val_labels_hf.create_dataset("viticulture", data=np.array(self.generate_label_grid(val_positions, vit_potential))) 
             val_labels_hf.create_dataset("market", data=np.array(self.generate_label_grid(val_positions, ma_potential))) 
             val_labels_hf.create_dataset("field", data=np.array(self.generate_label_grid(val_positions, gc_potential)))         
+
+            del val_data
+            gc.collect()
