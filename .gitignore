@@ -1,6 +1,6 @@
 **/*pycache*
 **/.ipynb_checkpoints
-*venv
+*env
 
 data/*
 *.zip
