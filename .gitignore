@@ -11,7 +11,8 @@ data/*
 *.jpg
 *.geojson
 *.png
-!notebooks/**
+
+!notebooks/**png
 
 !data/.gitkeep
 !media/*
