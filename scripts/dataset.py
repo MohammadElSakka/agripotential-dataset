@@ -170,10 +170,12 @@ class Dataset:
         patch_size = self.patch_size
         data = [ [] for _ in range(12)]
         for month in range(1, 13):
-            for i, j in positions:
-                patch = rasterio.open(self.__data_path["sentinel2"][month]).read(window=Window(j, i, patch_size, patch_size))
-                patch = self.normalize_sentinel2(patch, 0.25)
-                data[month-1].append(patch)
+            if month != 11:
+                for i, j in positions:
+                    patch = rasterio.open(self.__data_path["sentinel2"][month]).read(window=Window(j, i, patch_size, patch_size))
+                    patch = self.normalize_sentinel2(patch, 0.25)
+                    idx = month-1 if month < 12 else month-2
+                    data[idx].append(patch)
         return data
     
     def blocks_to_patches(self, positions, binary_mask):
@@ -197,15 +199,13 @@ class Dataset:
         train_positions = self.blocks_to_patches(train_positions, binary_mask)
         val_positions = self.blocks_to_patches(val_positions, binary_mask)
         test_positions = self.blocks_to_patches(test_positions, binary_mask)
- 
-        vit_potential = self.get_categorical_potential_data(potential="potent_vit")
-        ma_potential = self.get_categorical_potential_data(potential="potent_ma")
-        gc_potential = self.get_categorical_potential_data(potential="potent_gc")
-        
-        with h5py.File("dataset.h5", 'a') as hf:
+
+        print("HERE")
+        with h5py.File("dataset.h5", 'w') as hf:
             
             # TRAIN
             train_data = self.generate_sentinel2_grid(train_positions)
+            print("HERE")
             train_hf = hf.create_group("train") 
             train_sentinel_hf = hf.create_group("train/sentinel2")
             
@@ -221,15 +221,29 @@ class Dataset:
             train_sentinel_hf.create_dataset('08_august_2019', data=np.array(train_data[7]))
             train_sentinel_hf.create_dataset('09_september_2019', data=np.array(train_data[8]))
             train_sentinel_hf.create_dataset('10_october_2019', data=np.array(train_data[9]))
-            train_sentinel_hf.create_dataset('11_november_2019', data=np.array(train_data[10]))
-            train_sentinel_hf.create_dataset('12_december_2019', data=np.array(train_data[11]))
-        
-            train_labels_hf.create_dataset("viticulture", data=np.array(self.generate_label_grid(train_positions, vit_potential))) 
-            train_labels_hf.create_dataset("market", data=np.array(self.generate_label_grid(train_positions, ma_potential))) 
-            train_labels_hf.create_dataset("field", data=np.array(self.generate_label_grid(train_positions, gc_potential))) 
+#            train_sentinel_hf.create_dataset('11_november_2019', data=np.array(train_data[10]))
+            train_sentinel_hf.create_dataset('12_december_2019', data=np.array(train_data[10]))
+            print("HERE")
 
             del train_data 
             gc.collect()
+            
+            vit_potential = self.get_categorical_potential_data(potential="potent_vit")
+            ma_potential = self.get_categorical_potential_data(potential="potent_ma")
+            gc_potential = self.get_categorical_potential_data(potential="potent_gc")
+            
+            labels = np.array(self.generate_label_grid(train_positions, vit_potential))
+            train_labels_hf.create_dataset("viticulture", data=labels) 
+            print("HERE")
+            labels = np.array(self.generate_label_grid(train_positions, ma_potential))
+            train_labels_hf.create_dataset("market", data=labels) 
+            print("HERE")
+            labels = np.array(self.generate_label_grid(train_positions, gc_potential))
+            train_labels_hf.create_dataset("field", data=labels) 
+
+            del labels
+            gc.collect()
+            print("HERE")
 
             # TEST
             test_data = self.generate_sentinel2_grid(test_positions)
@@ -249,15 +263,20 @@ class Dataset:
             test_sentinel_hf.create_dataset('08_august_2019', data=np.array(test_data[7]))
             test_sentinel_hf.create_dataset('09_september_2019', data=np.array(test_data[8]))
             test_sentinel_hf.create_dataset('10_october_2019', data=np.array(test_data[9]))
-            test_sentinel_hf.create_dataset('11_november_2019', data=np.array(test_data[10]))
-            test_sentinel_hf.create_dataset('12_december_2019', data=np.array(test_data[11]))
-        
-            test_labels_hf.create_dataset("viticulture", data=np.array(self.generate_label_grid(test_positions, vit_potential))) 
-            test_labels_hf.create_dataset("market", data=np.array(self.generate_label_grid(test_positions, ma_potential))) 
-            test_labels_hf.create_dataset("field", data=np.array(self.generate_label_grid(test_positions, gc_potential))) 
+#            test_sentinel_hf.create_dataset('11_november_2019', data=np.array(test_data[10]))
+            test_sentinel_hf.create_dataset('12_december_2019', data=np.array(test_data[10]))
+
+            labels = np.array(self.generate_label_grid(test_positions, vit_potential))
+            test_labels_hf.create_dataset("viticulture", data=labels) 
+            labels = np.array(self.generate_label_grid(test_positions, ma_potential))
+            test_labels_hf.create_dataset("market", data=labels) 
+            labels = np.array(self.generate_label_grid(test_positions, gc_potential))
+            test_labels_hf.create_dataset("field", data=labels)
         
             del test_data
+            del labels
             gc.collect()
+            print("HERE")
 
             # VALIDATION
             val_data = self.generate_sentinel2_grid(val_positions)
@@ -277,12 +296,17 @@ class Dataset:
             val_sentinel_hf.create_dataset('08_august_2019', data=np.array(val_data[7]))
             val_sentinel_hf.create_dataset('09_september_2019', data=np.array(val_data[8]))
             val_sentinel_hf.create_dataset('10_october_2019', data=np.array(val_data[9]))
-            val_sentinel_hf.create_dataset('11_november_2019', data=np.array(val_data[10]))
-            val_sentinel_hf.create_dataset('12_december_2019', data=np.array(val_data[11]))
-        
-            val_labels_hf.create_dataset("viticulture", data=np.array(self.generate_label_grid(val_positions, vit_potential))) 
-            val_labels_hf.create_dataset("market", data=np.array(self.generate_label_grid(val_positions, ma_potential))) 
-            val_labels_hf.create_dataset("field", data=np.array(self.generate_label_grid(val_positions, gc_potential)))         
+#            val_sentinel_hf.create_dataset('11_november_2019', data=np.array(val_data[10]))
+            val_sentinel_hf.create_dataset('12_december_2019', data=np.array(val_data[10]))
+
+            print("HERE")
+            labels = np.array(self.generate_label_grid(val_positions, vit_potential))
+            val_labels_hf.create_dataset("viticulture", data=labels) 
+            labels = np.array(self.generate_label_grid(val_positions, ma_potential))
+            val_labels_hf.create_dataset("market", data=labels) 
+            labels = np.array(self.generate_label_grid(val_positions, gc_potential))
+            val_labels_hf.create_dataset("field", data=labels)         
 
             del val_data
+            del labels
             gc.collect()
