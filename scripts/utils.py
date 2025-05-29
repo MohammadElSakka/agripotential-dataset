@@ -30,10 +30,6 @@ def compute_boundaries(dataset, saved=True) -> tuple[int, int, int, int]:
     # Will return 3321 10979 0 9401
     return up, down, left, right
 
-def pixel_to_gps(data: np.ndarray, i, j: int, meta: dict) -> dict:
-
-    return
-
 def gps_to_pixel(gps: dict, meta: dict) -> tuple[int, int]:
     transformer = Transformer.from_crs(crs_from='WGS84', crs_to=meta['crs'])
     x, y = transformer.transform([gps['LAT']], [gps['LON']])
