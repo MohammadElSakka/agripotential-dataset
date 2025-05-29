@@ -4,15 +4,12 @@ Agricultural potential refers to the capacity of a specific area to produce crop
 ```
 python3 main.py dataset
 ```
-A jupyter notebook is provided as a tutorial to understand the dataset structure in ```notebooks/tutorial.ipynb```
+
+Tutorials are provided to guide you at using the dataset structure in ```notebooks/```
 
 # Input features
 Input features include data collected in 2019 that consists of:
-- Monthly multispectral Sentinel-2 images 
-- Elevation data 
-- Weather data (10-day frequency):
-    - Temperature (Avg, Min, Max) in °C
-    - Precipitation (mm)
+- 11 multispectral Sentinel-2 images 
 
 # Output labels
 The potentiality of 3 types of plantations:
@@ -22,34 +19,6 @@ The potentiality of 3 types of plantations:
 
 The potential has 5 levels ranging from very limited to very high.
 
-<!-- # Data visualization
-
-
-## Potentials
-### Potential Levels
-![Potential levels](media/categorical_colorbar.png)
-### Market Gardening
-![Market gardening](media/ma_potential.png)
-### Viticulture
-![Viticulture](media/vit_potential.png)
-### Field Crops
-![Field crops](media/gc_potential.png)
-
-## Elevation
-![Elevation](media/elevation.png)
-## Sentinel-2
-### Color Image
-![Color image](media/sentinel2_2019_6.png)
-### False Color Image
-![False color image](media/false_sentinel2_2019_6.png)
-### Temperature (Avg) in °C
-![Temperature avg](media/temperature.png)
-### Temperature (Max) in °C
-![Temperature max](media/max_temperature.png)
-### Temperature (Min) in °C
-![Temperature avg](media/min_temperature.png)
-### Precipitation (mm)
-![Precipitation](media/precipitation.png) -->
 
 # Creating Python virtual environment
 
@@ -61,12 +30,5 @@ source agri_venv/bin/activate
 pip install jupyter
 pip install ipykernel
 python -m ipykernel install --user --name=agri_venv --display-name "Python (agri_venv)"
-pip install -r requirements.txt
+cat requirements.txt | xargs -1 pip install 
 ```
-
-# Related references
-
-## Yield prediction from multitemporal multisource multimodal data
-
-**(1)** Kang, Y., Ozdogan, M., Zhu, X., Ye, Z., Hain, C., & Anderson, M. (2020). Comparative assessment of environmental variables and machine learning algorithms for maize yield prediction in the US Midwest. Environmental Research Letters, 15(6), 064005. [Click to access](https://iopscience.iop.org/article/10.1088/1748-9326/ab7df9/meta)
-
