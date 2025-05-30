@@ -8,6 +8,7 @@ https://zenodo.org/records/15551802
 ```
 
 After downloading the raw files archive, extract it into your preferred directory (e.g. raw_data/) and pass it to the program like this if you want to construct the dataset from scratch.  
+**Be careful, generating the dataset requires a lot of memory resources**
 ```
 python3 main.py <path/to/the/raw/files/directory/>  
 ```
