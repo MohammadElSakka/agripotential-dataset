@@ -23,7 +23,7 @@ from skimage.draw import polygon
 from scripts.utils import gps_to_pixel 
 
 class Dataset:
-    def __init__(self, download=False, root=".", ind_conf=2, iddiz=2, icucs=2) -> None:
+    def __init__(self, root=".", ind_conf=2, iddiz=2, icucs=2) -> None:
         np.random.seed(42)
         
         self.__data_path = {}
@@ -36,20 +36,8 @@ class Dataset:
         self.block_size = 256
         self.patch_size = 128
         
-        if download:
-            self.__download()
         self.__save_paths()
         self.__save_meta()
-
-    def __download(self) -> bool:
-        response = requests.get("https://zenodo.org/records/15551802/files/raw_data.zip?download=1")
-        if response.status_code == 200:
-            with zipfile.ZipFile(io.BytesIO(response.content)) as zip:
-                zip.extractall(f"{self.root}/data")
-            return True
-        else:
-            print(f"Failed to download zip file [status code {response.status_code}].")
-            return False
     
     def __save_meta(self) -> None:
         self.__meta = rasterio.open(self.__data_path["sentinel2"][1]).meta     

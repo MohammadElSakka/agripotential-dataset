@@ -5,6 +5,7 @@ import requests
 import zipfile
 import os 
 import argparse
+import io
 
 from scripts.dataset import Dataset
 warnings.filterwarnings("ignore", category=FutureWarning, message=".*Calling float on a single element Series.*")
@@ -51,7 +52,14 @@ if len(sys.argv) > 1:
                 print(f"Error deleting the zip file: {e}")
         else:
             print(f"Failed to download the file. Status code: {response.status_code}")
-    else:
-        print("Generating dataset from raw data. Downloading raw data if --download_raw_data is specified.")
-        dataset = Dataset(download= args.download_raw_data, ind_conf=3, iddiz=2.5 , icucs=3)
+    
+    if args.download_raw_data:
+        print("Downloading raw data.")
+        response = requests.get("https://zenodo.org/records/15551802/files/raw_data.zip?download=1")
+        if response.status_code == 200:
+            with zipfile.ZipFile(io.BytesIO(response.content)) as zip:
+                zip.extractall(f"./data")
+    
+    if args.generate_dataset:
+        dataset = Dataset(ind_conf=3, iddiz=2.5 , icucs=3)
         dataset.export_dataset()
