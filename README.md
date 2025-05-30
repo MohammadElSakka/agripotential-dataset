@@ -56,3 +56,19 @@ pip install ipykernel
 python -m ipykernel install --user --name=my_env --display-name "Python (my_env)"
 cat requirements.txt | xargs -1 pip install 
 ```
+
+
+# Downloading data
+
+## Raw data (Linux) 
+
+```
+wget -O raw_data.zip https://zenodo.org/records/15551802/files/raw_data.zip?download=1
+unzip raw_data.zip -d raw_data
+```
+
+## The dataset (Linux) 
+```
+wget -O dataset.zip https://zenodo.org/records/15551830/files/dataset.zip?download=1
+unzip dataset.zip
+```
