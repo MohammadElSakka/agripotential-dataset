@@ -33,7 +33,7 @@ Specifically, you can find:
 | File size          | 28.4 GB                                                               |
 | Data volume        | 145.7 GB                                                              |
 | Number of images   | 8890                                                                  |
-| Timestamps         | 12                                                                    |
+| Timestamps         | 11                                                                    |
 | Spectral channels  | 10                                                                    |
 | Spatial resolution | 5 m/px                                                                |
 | Dimensions         | 128x128 (0.41 km²)                                                    |
@@ -54,7 +54,7 @@ source my_env/bin/activate
 pip install jupyter
 pip install ipykernel
 python -m ipykernel install --user --name=my_env --display-name "Python (my_env)"
-cat requirements.txt | xargs -1 pip install 
+cat requirements.txt | xargs -n 1 pip install 
 ```
 
 
