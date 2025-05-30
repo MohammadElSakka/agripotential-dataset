@@ -12,7 +12,7 @@ data/*
 *.geojson
 *.png
 
-!tutorials/**png
+!tutorials/**/**png
 
 !data/.gitkeep
 !media/*
