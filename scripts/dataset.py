@@ -42,7 +42,7 @@ class Dataset:
         self.__save_meta()
 
     def __download(self) -> bool:
-        response = requests.get("https://cloud.irit.fr/s/PZgfCYiV3F33Sjv/download")
+        response = requests.get("https://zenodo.org/records/15551802/files/raw_data.zip?download=1")
         if response.status_code == 200:
             with zipfile.ZipFile(io.BytesIO(response.content)) as zip:
                 zip.extractall(f"{self.root}/data")
