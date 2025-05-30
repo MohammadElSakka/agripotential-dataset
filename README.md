@@ -2,7 +2,7 @@
 
 Agricultural potential refers to the capacity of a specific area to produce crops. This potential is influenced by environmental factors such as soil quality and climate. This repository proposes a remote sensing multimodal multisource and multitemporal dataset built for supervised AI. This repository contains the code needed to construct the dataset from raw files.  
 
-The raw files are available for download here:  
+The raw files are available for download [here](https://zenodo.org/records/15551802):  
 ```
 https://zenodo.org/records/15551802
 ```
@@ -13,7 +13,7 @@ python3 main.py <path/to/the/raw/files/directory/>
 ```
 This will produce a "dataset.h5" file, which is the AgriPotential dataset.  
 
-If you want to skip this part, you are free to download the ready-to-use dataset from this link:  
+If you want to skip this part, you are free to download the ready-to-use dataset from [this link](https://zenodo.org/records/15551830):  
 ```
 https://zenodo.org/records/15551830
 ```
