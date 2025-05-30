@@ -23,15 +23,15 @@ from skimage.draw import polygon
 from scripts.utils import gps_to_pixel 
 
 class Dataset:
-    def __init__(self, root=".", ind_conf=2, iddiz=2, icucs=2) -> None:
+    def __init__(self, data_path, ind_conf=2, iddiz=2, icucs=2) -> None:
         np.random.seed(42)
         
+        self.data_path = data_path
         self.__data_path = {}
         self.__meta = {} 
         self.ind_conf = ind_conf
         self.iddiz = iddiz
         self.icucs = icucs
-        self.root = root
 
         self.block_size = 256
         self.patch_size = 128
@@ -45,10 +45,10 @@ class Dataset:
     # private methods to get paths
     def __save_paths(self) -> None:
         self.__data_path["sentinel2"] = {}
-        sentinel2_paths = [os.path.abspath(f"{self.root}/data/raw_data/{f}") for f in os.listdir("data/raw_data") if f.endswith("tif")]
+        sentinel2_paths = [os.path.abspath(f"{self.data_path}/{f}") for f in os.listdir(self.data_path) if f.endswith("tif")]
         for path in sentinel2_paths:
             self.__data_path["sentinel2"][int(path.split("_")[-2])] = path
-        self.__data_path["labels"] = os.path.abspath(f"{self.root}/data/raw_data/labels.geojson")
+        self.__data_path["labels"] = os.path.abspath(f"{self.data_path}/labels.geojson")
     
     def get_meta(self):
         return self.__meta
