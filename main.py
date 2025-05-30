@@ -4,6 +4,7 @@ import sys
 import requests
 import zipfile
 import os 
+import argparse
 
 from scripts.dataset import Dataset
 warnings.filterwarnings("ignore", category=FutureWarning, message=".*Calling float on a single element Series.*")
@@ -11,7 +12,24 @@ warnings.filterwarnings("ignore", category=rasterio.errors.NotGeoreferencedWarni
 
 
 if len(sys.argv) > 1:
-    if sys.argv[1] == "dataset":
+    parser = argparse.ArgumentParser("python3 main.py [OPTIONS]", formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument("--download_raw_data", 
+                            action="store_true", 
+                            help="Download the raw data."
+                        ) 
+    
+    parser.add_argument("--download_dataset", 
+                            action="store_true", 
+                            help="Download the final dataset."
+                        ) 
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(1)
+
+    args = parser.parse_args()
+    
+    if args.download_dataset:
+        print("Downloading final dataset. There is nothing else to do.", flush=True)
         with open("download_link.txt", "r") as file:
             link = file.readline().strip()
         response = requests.get(link)
@@ -33,6 +51,7 @@ if len(sys.argv) > 1:
                 print(f"Error deleting the zip file: {e}")
         else:
             print(f"Failed to download the file. Status code: {response.status_code}")
-
-dataset = Dataset(download=False, ind_conf=3, iddiz=2.5 , icucs=3)
-dataset.export_dataset()
+    else:
+        print("Generating dataset from raw data. Downloading raw data if --download_raw_data is specified.")
+        dataset = Dataset(download= args.download_raw_data, ind_conf=3, iddiz=2.5 , icucs=3)
+        dataset.export_dataset()
