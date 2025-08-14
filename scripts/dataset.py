@@ -141,7 +141,8 @@ class Dataset:
         
         return train_mask, train_positions, val_mask, val_positions, test_mask, test_positions
 
-    def normalize_sentinel2(self, arr, cut):
+    def normalize_sentinel2(self, arr):
+        cut = np.percentile(arr/10000, 98)
         data = np.clip(arr/10000, 0.00001, cut)
         data = data/cut
         return data
@@ -161,7 +162,7 @@ class Dataset:
             if month != 11:
                 for i, j in positions:
                     patch = rasterio.open(self.__data_path["sentinel2"][month]).read(window=Window(j, i, patch_size, patch_size))
-                    patch = self.normalize_sentinel2(patch, 0.25)
+                    patch = self.normalize_sentinel2(patch)
                     idx = month-1 if month < 12 else month-2
                     data[idx].append(patch)
         return data
