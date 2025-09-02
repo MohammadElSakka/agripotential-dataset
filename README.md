@@ -16,7 +16,7 @@ This will produce a "dataset.h5" file, which is the AgriPotential dataset.
 
 If you want to skip this part, you are free to download the ready-to-use dataset from [this link](https://zenodo.org/records/17035023):  
 ```
-https://zenodo.org/records/15556484
+https://zenodo.org/records/17035023
 ```
 There you can find a dataset.zip that you contains the dataset.h5 file that you would construct using this code.  
 
