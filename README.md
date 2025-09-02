@@ -14,9 +14,9 @@ python3 main.py <path/to/the/raw/files/directory/>
 ```
 This will produce a "dataset.h5" file, which is the AgriPotential dataset.  
 
-If you want to skip this part, you are free to download the ready-to-use dataset from [this link](https://zenodo.org/records/17035023):  
+If you want to skip this part, you are free to download the ready-to-use dataset from [this link](https://zenodo.org/records/15551829):  
 ```
-https://zenodo.org/records/17035023
+https://zenodo.org/records/15551829
 ```
 There you can find a dataset.zip that you contains the dataset.h5 file that you would construct using this code.  
 
@@ -42,7 +42,7 @@ Specifically, you can find:
 | Crop types         | viticulture, market gardening, field crops                            |
 | Potential classes  | Very low, low, average, high, very high                               |
 | License            | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.en)      |
-| Data link          | [Zenodo Record](https://zenodo.org/records/17035023)   
+| Data link          | [Zenodo Record](https://zenodo.org/records/15551829)   
 
 
 # Creating Python virtual environment
@@ -70,6 +70,6 @@ unzip raw_data.zip -d raw_data
 
 ## The dataset (Linux) 
 ```
-wget -O dataset.zip https://zenodo.org/records/17035023/files/dataset.zip?download=1
+wget -O dataset.zip https://zenodo.org/records/15551829/files/dataset.zip?download=1
 unzip dataset.zip
 ```
