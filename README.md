@@ -1,3 +1,8 @@
+# IMPORTANT NOTICE
+This repo is part of the supplementary material of the paper "AgriPotential: A Novel Multi-Spectral and Multi-Temporal Remote Sensing Dataset for Agricultural Potentials" that was submitted to the conference CBMI2025. 
+
+A more advanced and optimized version of this work exists [here](https://github.com/MohammadElSakka/agripotentia).
+
 # Agricultural Potential Dataset
 
 Agricultural potential refers to the capacity of a specific area to produce crops. This potential is influenced by environmental factors such as soil quality and climate. This repository proposes a remote sensing multimodal multisource and multitemporal dataset built for supervised AI. This repository contains the code needed to construct the dataset from raw files.  
