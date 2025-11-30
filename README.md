@@ -1,7 +1,7 @@
 # IMPORTANT NOTICE
 This repo is part of the supplementary material of the paper "AgriPotential: A Novel Multi-Spectral and Multi-Temporal Remote Sensing Dataset for Agricultural Potentials" that was submitted to the conference CBMI2025. 
 
-A more advanced and optimized version of this work exists [here](https://github.com/MohammadElSakka/agripotentia).
+A more advanced and optimized version of this work exists [here](https://github.com/MohammadElSakka/agripotential).
 
 # Agricultural Potential Dataset
 
